@@ -272,7 +272,7 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     容器内部的端口没有映射出来，容器内的端口无法被访问到
     >docker run --name mytomcat -d tomcat:latest
 
-* 根据镜像启动容器，并做端口映射
+* 根据镜像启动容器，并做端口映射，默认是TCP
     >docker run --name mytomcat -d -p 8888:8080 tomcat
     http://host-ip:8888 浏览
     
@@ -295,6 +295,9 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     >docker exec -it CONTAINER_ID bash  
     // This will create a new Bash session in the container CONTAINER_ID 新建一个bash会话，此时就能在此session中输入命令
 
+* 查看容器的启动参数
+>docker inspect container_id
+
 * 查看容器日志
     ```text
     Usage:  docker logs [OPTIONS] CONTAINER
@@ -310,43 +313,186 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
           --until string   Show logs before a timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)
     ```
 
+* [端口映射](https://docs.docker.com/network/links/#connect-using-network-port-mapping)
+    ```text
+    docker run -d -p 127.0.0.1:80:8080/tcp ubuntu
+
+    docker run -d -p 127.0.0.1:80:5000/udp training/webapp python app.py
+
+    // 还可以指定 /sctp 协议s
+    ```
+* docker容器的配置文件目录
+```text
+// 容器配置目录
+/var/lib/docker/containers/container_ids
+.
+├── 16da4944b317c12036b67e3bcee1ed6a89f78f097874c50c32f33a956bd9b730-json.log  // json格式的日志
+├── config.v2.json  // 容器的配置，State,Config(主机名，cmd, 执行cmd的用户，Env环境变量，network、volume，mount point)
+├── hostconfig.json  // 主机配置,CPU，内存等
+├── hostname  // 配置主机名的文件，即/etc/hostname
+├── hosts  // hosts绑定文件，即OS的/etc/hosts文件
+├── resolv.conf // 配置DNS服务器，即/etc/resolv.conf，
+└── shm  // 配置共享内存
+```
+
+* 容器volume卷目录
+>/var/lib/docker/volumes/container
+
 #### docker run
 [docker run](https://docs.docker.com/engine/reference/commandline/run/)
 
-在新容器中运行命令，创新一个新容器，然后启动该容器
+在新容器中运行命令，
 
-#### Usage
-```text
-docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+所做的操作：创新一个新容器，然后启动该容器
+
+*  Usage
+    ```text
+    docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+    ```
+
+* Options
+    [Options](https://docs.docker.com/engine/reference/commandline/run/#options)
+    
+    ```text
+    --detach , -d           Run container in background and print container ID
+    --name		            Assign a name to the container  为容器指定一个名称
+    --interactive , -i		Keep STDIN open even if not attached  保持标准输入打开，即使未连接。可进行命令交互，进入容器的CLI
+    --tty , -t		        Allocate a pseudo-TTY  分配一个伪TTY
+    --publish , -p		    Publish a container's port(s) to the host  发布容器中的端口到主机上，即端口映射
+    --publish-all , -P		Publish all exposed ports to random ports  容器中的所有端口发布的主机上，端口随机
+    --device                Add a host device to the container
+    --env , -e              Set environment variables  设置环境变量
+    --env-file		        Read in a file of environment variables
+    --cpu-quota             Limit CPU CFS (Completely Fair Scheduler) quota
+    --cpus                  Number of CPUs
+    --memory , -m		    Memory limit
+    --volume , -v		    Bind mount a volume
+    --volume-driver		    Optional volume driver for the container
+    --workdir , -w		    Working directory inside the container
+    --attach , -a		    Attach to STDIN, STDOUT or STDERR  连接标准输入、标准输出或标准错误输出
+    ```
+
+##### Set working directory (-w)设置工作目录
+```bash
+docker run -w /path/to/dir/ -i -t  ubuntu pwd
+```
+The `-w` lets the command being executed inside directory given, here `/path/to/dir/`.  允许在指定的目录中执行命令
+
+If the path does not exist it is created inside the container.  如果指定的目录在dockerz主机不存在，则会在容器中创建该目录
+
+##### Set storage driver options per container设置存储驱动选项
+```bash
+docker run -it --storage-opt size=120G fedora /bin/bash
+```
+This (size) will allow to set the container rootfs size to 120G at creation time. 
+
+This option is only available for the `devicemapper`, `btrfs`, `overlay2`, `windowsfilter` and `zfs` graph drivers. 
+
+##### Mount tmpfs (--tmpfs)临时文件系统
+```bash
+docker run -d --tmpfs /run:rw,noexec,nosuid,size=65536k my_image
+```
+The `--tmpfs` flag mounts an empty tmpfs into the container with the `rw`, `noexec`, `nosuid`, `size=65536k` options.
+
+
+##### Mount volume (-v, --read-only)挂载卷
+```bash
+docker run -v `pwd`:`pwd` -w `pwd` -i -t  ubuntu pwd
+```
+The `-v` flag mounts the current working directory into the container.  主机上当前的工作目录挂载到容器中s
+
+```bash
+docker run -v /doesnt/exist:/foo -w /foo -i -t ubuntu bash
+```
+When the host directory of a bind-mounted volume doesn’t exist, Docker will automatically create this directory on the host for you.
+
+指定要绑定挂载的目录存在时，主机将自动创建该目录，/doesnt/exist 主机上的目录 挂载到容器中的/foo
+
+
+```bash
+docker run --read-only -v /icanwrite busybox touch /icanwrite/here
+```
+The --read-only flag mounts the container’s root filesystem as read only 
+
+prohibiting writes to locations other than the specified volumes for the container.
+
+设置容器的root filesystem只读，只能往容器中 -v指定的目录中写入。
+
+
+```bash
+docker run -t -i -v /var/run/docker.sock:/var/run/docker.sock -v /path/to/static-docker-binary:/usr/bin/docker busybox sh
+```
+By bind-mounting the docker unix socket and statically linked docker binary (refer to get the linux binary),  
+绑定挂载unix socket、静态链接的docker二进制文件，
+you give the container the full access to create and manipulate the host’s Docker daemon.  
+给容器完全访问的权限，创建和操纵host’s Docker daemon
+
+
+##### Add bind mounts or volumes using the --mount flag
+--volume(-v)能支持的参数，--mount都能支持，但语法不同。建议使用--mount
+
+```bash
+docker run --read-only --mount type=volume,target=/icanwrite busybox touch /icanwrite/here
+```
+设置容器的root filesystem只读，只能往容器中target=/icanwrite的目录中写入。
+
+
+```bash
+docker run -t -i --mount type=bind,src=/data,dst=/data busybox sh
+```
+绑定挂载，主机的/data挂载到容器的/data
+
+
+##### Set environment variables (-e, --env, --env-file)设置环境变量
+```bash
+docker run -e MYVAR1 --env MYVAR2=foo --env-file ./env.list ubuntu bash
+```
+Use the `--env(-e)`, and `--env-file` flags to set simple (non-array) environment variables in the container you’re running, or overwrite variables that are defined in the Dockerfile of the image you’re running.
+
+
+```bash
+$ docker run --env VAR1=value1 --env VAR2=value2 ubuntu env | grep VAR
+VAR1=value1
+VAR2=value2
 ```
 
-#### Options
-[Options](https://docs.docker.com/engine/reference/commandline/run/#options)
+```bash
+export VAR1=value1
+export VAR2=value2
 
-```text
---detach , -d           Run container in background and print container ID
---name		            Assign a name to the container  为容器指定一个名称
---interactive , -i		Keep STDIN open even if not attached  保持标准输入打开，即使未连接。可进行命令交互，进入容器的CLI
---tty , -t		        Allocate a pseudo-TTY  分配一个伪TTY
---publish , -p		    Publish a container's port(s) to the host  发布容器中的端口到主机上，即端口映射
---publish-all , -P		Publish all exposed ports to random ports  容器中的所有端口发布的主机上，端口随机
---device                Add a host device to the container
---env , -e              Set environment variables
---env-file		        Read in a file of environment variables
---cpu-quota             Limit CPU CFS (Completely Fair Scheduler) quota
---cpus                  Number of CPUs
---memory , -m		    Memory limit
---volume , -v		    Bind mount a volume
---volume-driver		    Optional volume driver for the container
---workdir , -w		    Working directory inside the container
---attach , -a		    Attach to STDIN, STDOUT or STDERR  连接标准输入、标准输出或标准错误输出
+$ docker run --env VAR1 --env VAR2 ubuntu env | grep VAR
+VAR1=value1
+VAR2=value2
 ```
 
+```bash
+$ cat env.list
 
+VAR1=value1
+VAR2=value2
+USER
 
+$ docker run --env-file env.list ubuntu env | grep VAR
+VAR1=value1
+VAR2=value2
+USER=denis
+```
 
+##### Mount volumes from container (--volumes-from)
+```bash
+docker run --volumes-from 777f7dc92da7 --volumes-from ba8c0c54f0f2:ro -i -t ubuntu pwd
+```
+The `--volumes-from` flag mounts all the defined volumes from the referenced containers. 
 
+The container ID may be optionally suffixed with `:ro` or `:rw` to mount the volumes in read-only or read-write mode, respectively. 
 
+By default, the volumes are mounted in the same mode (read write or read only) as the reference container.
+
+To change the label in the container context, you can add either of two suffixes `:z` or `:Z` to the volume mount.
+
+:z  The z option tells Docker that two containers share the volume content. Shared volume labels allow all containers to read/write content.
+
+:Z  The Z option tells Docker to label the content with a private unshared label(私有非共享). Only the current container can use a private volume.（只有当前的容器能使用该卷）
 
 
 
