@@ -273,7 +273,8 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     >docker run --name mytomcat -d tomcat:latest
 
 * 根据镜像启动容器，并做端口映射，默认是TCP
-    >docker run --name mytomcat -d -p 8888:8080 tomcat
+    >docker run --name mytomcat --restart=always -d -p 8888:8080 tomcat
+    
     http://host-ip:8888 浏览
     
 * 停止运行中的容器
@@ -365,7 +366,7 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     --env-file		        Read in a file of environment variables
     --cpu-quota             Limit CPU CFS (Completely Fair Scheduler) quota
     --cpus                  Number of CPUs
-    --memory , -m		    Memory limit
+    --memory , -m		    Memory limit，Specify hard limits on memory available.示例： -m 4G
     --volume , -v		    Bind mount a volume
     --volume-driver		    Optional volume driver for the container
     --workdir , -w		    Working directory inside the container
@@ -495,14 +496,255 @@ To change the label in the container context, you can add either of two suffixes
 :Z  The Z option tells Docker to label the content with a private unshared label(私有非共享). Only the current container can use a private volume.（只有当前的容器能使用该卷）
 
 
+##### Add host device to container (--device)
+It is often necessary to directly expose devices to a container. 通常用于需要将存储device直接暴露给容器
+```bash
+docker run --device=/dev/sdc:/dev/xvdc \
+             --device=/dev/sdd --device=/dev/zero:/dev/nulo \
+             -i -t \
+             ubuntu ls -l /dev/{xvdc,sdd,nulo}
 
-* 问题Cannot connect to the Docker daemon
+brw-rw---- 1 root disk 8, 2 Feb  9 16:05 /dev/xvdc
+brw-rw---- 1 root disk 8, 3 Feb  9 16:05 /dev/sdd
+crw-rw-rw- 1 root root 1, 5 Feb  9 16:05 /dev/nulo
+```
+By default, the container will be able to read`, `write` and `mknod` these devices. 
+
+This can be overridden using a third :`rwm` set of options to each `--device` flag. 
+
+If the container is running in `privileged` mode(witht the `--privileged` flag), then the permissions specified will be ignored.
+
+```bash
+$ docker run --device=/dev/sda:/dev/xvdc --rm -it ubuntu fdisk  /dev/xvdc
+
+Command (m for help): q
+
+$ docker run --device=/dev/sda:/dev/xvdc:r --rm -it ubuntu fdisk  /dev/xvdc
+You will not be able to write the partition table.
+
+Command (m for help): q
+
+$ docker run --device=/dev/sda:/dev/xvdc:rw --rm -it ubuntu fdisk  /dev/xvdc
+
+Command (m for help): q
+
+$ docker run --device=/dev/sda:/dev/xvdc:m --rm -it ubuntu fdisk  /dev/xvdc
+fdisk: unable to open /dev/xvdc: Operation not permitted
+```
+
+##### Restart policies (--restart)
+Docker daemon进程在退出后(即Docker daemon重启后)，重启容器策略
+
+格式:
+> --restart=RestartPolicies
+
+Policy	|Result
+:--- |:---
+no	|Do not automatically restart the container when it exits. This is the default.
+on-failure[:max-retries]	|Restart only if the container exits with a non-zero exit status. Optionally, limit the number of restart retries the Docker daemon attempts.
+unless-stopped	|Restart the container unless it is explicitly stopped or Docker itself is stopped or restarted.
+always	|Always restart the container regardless of the exit status. When you specify always, the Docker daemon will try to restart the container indefinitely. The container will also always start on daemon startup, regardless of the current state of the container.
+ 
+* 示例
+    >docker run --restart=always redis
+
+#### 修改Docker容器启动配置参数
+有时候，我们创建容器时忘了添加参数 --restart=always ，当 Docker 重启时，容器未能自动启动
+
+* 方法1: Docker命令修改
+    >docker container update --restart=always 容器名字/ID
+
+* 方法2: 直接改配置文件
     ```text
-    docker ps
+    首先停止容器，不然无法修改配置文件
     
-    Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+    配置文件路径为：/var/lib/docker/containers/容器ID
+    
+        在该目录下找到一个文件 hostconfig.json ，找到该文件中关键字 RestartPolicy
+        
+        修改前配置："RestartPolicy":{"Name":"no","MaximumRetryCount":0}
+        
+        修改后配置："RestartPolicy":{"Name":"always","MaximumRetryCount":0}
+    
+    最后启动容器。
     ```
-    原因：  
-    这是因为没有启动docker Engine服务，启动docker服务
-    >systemctl start docker
 
+##### 修改docker容器的挂载路径
+1. 停止所有docker容器
+    >docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
+2. 停止docker服务
+    >service docker stop
+    
+3. 修改mysql路径
+    ```bash
+    cd ~
+    sudo cp -r mysql/ /home/server/
+    ```
+4. 备份容器配置文件
+    ```bash
+    cd /var/lib/docker/containers/de9c6501cdd3
+    cp hostconfig.json hostconfig.json.bak
+    cp config.v2.json config.v2.json.bak
+    ```
+
+5. 修改hostconfig的冒号前的配置路径
+    ```bash
+    vi hostconfig.json
+    
+    "Binds": ["/home/server/mysql/conf/my.cnf:/etc/mysql/my.cnf", "/home/server/mysql/logs:/logs", "/home/server/mysql/data:/mysql_data"],
+    ```
+
+6. 修改config的Source的配置路径
+    ```text
+    vi config.v2.json
+    
+           "MountPoints": {
+                  "/etc/mysql/my.cnf": {
+                         "Source": "/home/server/mysql/conf/my.cnf",
+                         "Destination": "/etc/mysql/my.cnf",
+                         "RW": true,
+                         "Name": "",
+                         "Driver": "",
+                         "Relabel": "",
+                         "Propagation": "rprivate",
+                         "Named": false,
+                         "ID": ""
+                  },
+                  "/logs": {
+                         "Source": "/home/server/mysql/logs",
+                         "Destination": "/logs",
+                         "RW": true,
+                         "Name": "",
+                         "Driver": "",
+                         "Relabel": "",
+                         "Propagation": "rprivate",
+                         "Named": false,
+                         "ID": ""
+                  },
+                  "/mysql_data": {
+                         "Source": "/home/server/mysql/data",
+                         "Destination": "/mysql_data",
+                         "RW": true,
+                         "Name": "",
+                         "Driver": "",
+                         "Relabel": "",
+                         "Propagation": "rprivate",
+                         "Named": false,
+                         "ID": ""
+                  },
+                  "/var/lib/mysql": {
+                         "Source": "",
+                         "Destination": "/var/lib/mysql",
+                         "RW": true,
+                         "Name": "85d91bff7012b57606af819480ce267449084e81ab386737c80ace9fe75f6621",
+                         "Driver": "local",
+                         "Relabel": "",
+                         "Propagation": "",
+                         "Named": false,
+                         "ID": "897cd0152dd152166cb2715044ca4a3915a1b66280e0eb096eb74c2d737d7f77"
+                  }
+           },
+    ```
+7. 启动docker服务
+    >service docker start
+
+8. 启动所有docker容器
+    >docker start $(docker ps -a |awk '{ print $1}' |tail -n +2)
+
+##### 修改docker默认的存储位置
+docker 的所有images及相关信息存储位置为：/var/lib/docker
+
+1. 查看默认的docker存储路径
+    ```bash
+    docker info |grep 'Docker Root Dir'
+    
+    # 
+    WARNING: No swap limit support
+    Docker Root Dir: /var/lib/docker
+    ```
+
+2. 停止所有docker容器
+    >sudo docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
+
+3. 停止docker服务
+    >sudo service docker stop
+
+4. 打包docker目录
+    ```bash
+    cd /var/lib
+    sudo tar -czvf /usr/docker.tar.gz docker/
+    cd /usr/
+    sudo tar -xzvf docker.tar.gz
+    ```
+
+5. 修改docker默认的存储位置
+    ```bash
+    vim /etc/docker/daemon.json
+    
+    #
+    {
+        "graph": "/usr/docker"
+    }
+    ```
+    docker安装后默认没有[daemon.json](https://docs.docker.com/engine/reference/commandline/dockerd/)这个配置文件，需要进行手动创建。配置文件的默认路径：/etc/docker/daemon.json
+
+6. 启动docker服务
+    >sudo service docker start
+7. 启动所有docker容器
+    >sudo docker start $(docker ps -a | awk '{ print $1}' | tail -n +2)
+8. 查看修改后docker存储路径
+    ```bash
+    docker info |grep 'Docker Root Dir'
+    
+    #
+    WARNING: No swap limit support
+    Docker Root Dir: /usr/docker
+    ```
+
+
+## 启动mysql容器示例
+
+[mysql镜像使用hub文档](https://hub.docker.com/_/mysql)
+
+1. 拉取镜像
+    >docker pull mysql
+    
+    其他版本看hub mysql的Tags
+
+2. 启动一个mysql容器
+    ```bash
+    docker run --name mysql03 -d -p 13306:3306-v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql:tag
+    ```
+    This will start a new container some-mysql where the MySQL instance uses the combined startup settings 
+    from `/etc/mysql/my.cnf` and `/etc/mysql/conf.d/config-file.cnf`, 
+    with settings from the latter taking precedence.
+    
+    把主机的/conf/mysql文件夹挂载到 mysql03 docker容器的/etc/mysql/conf.d 文件夹里面
+    
+    改mysql的配置文件就只需要把mysql配置文件放在自定义的文件夹下（/conf/mysql）
+
+    ```bash
+    docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    
+    docker run --name some-mysql -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
+    
+    docker run --name some-mysql -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root-pwd 
+    ```
+    -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
+    
+    * Docker Secrets
+        
+        In particular, this can be used to load passwords from Docker secrets stored in `/run/secrets/<secret_name>` files
+        
+        /run/secrets/<secret_name> 内容为密码字符串
+    
+    /etc/docker/mysql/secrets/mysql-root
+    ```text
+    MYSQL_ROOT_PASSWORD=my-secret-pw
+    MYSQL_ROOT_HOST=10.100.11.12
+    MYSQL_DATABASE=new_database
+    MYSQL_USER=new_user
+    MYSQL_PASSWORD=pwd_for_new_user
+    ```
+    
+    docker run --name mysql01 -p 13306:3306 -v /etc/docker/mysql/secrets:/run/secrets -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root -d mysql
