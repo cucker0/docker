@@ -292,9 +292,17 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     >docker rm [OPTIONS] CONTAINER [CONTAINER...]  
     docker rm CONTAINER_ID
 
-* 在运行的容器中执行命令
+* 向运行的指定容器中执行命令
     >docker exec -it CONTAINER_ID bash  
     // This will create a new Bash session in the container CONTAINER_ID 新建一个bash会话，此时就能在此session中输入命令
+
+    ````text
+    docker container exec <CONTAINER_ID> \
+        bash -c 'mysqladmin --user=wordpress --password="$(< /run/secrets/old_mysql_password)" password "$(< /run/secrets/mysql_password)"'
+      
+    docker container exec $(docker ps --filter name=mysql -q) \
+        bash -c 'mysqladmin --user=wordpress --password="$(< /run/secrets/old_mysql_password)" password "$(< /run/secrets/mysql_password)"'
+    ````
 
 * 查看容器的启动参数
 >docker inspect container_id
@@ -569,6 +577,19 @@ always	|Always restart the container regardless of the exit status. When you spe
     最后启动容器。
     ```
 
+#### Publish port(发布端口，端口映射)
+Publish a container's port(s) to the host
+
+>docker run -d -p 127.0.0.1:80:8080/tcp ubuntu
+
+ip省略，为0.0.0.0，即所有IP
+
+前面的端口为主机的端口，后面的端口为容器端口
+
+/协议：/tcp, /udp or /sctp，缺省为/tcp
+
+[container links](https://docs.docker.com/network/links/)
+
 ##### 修改docker容器的挂载路径
 1. 停止所有docker容器
     >docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
@@ -713,7 +734,9 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
 
 2. 启动一个mysql容器
     ```bash
-    docker run --name mysql03 -d -p 13306:3306-v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql:tag
+    docker run --name mysql01 -d -p 13306:3306 -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql
+    
+    docker run --name mysql02 -d -p 13306:3306 -v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql:tag
     ```
     This will start a new container some-mysql where the MySQL instance uses the combined startup settings 
     from `/etc/mysql/my.cnf` and `/etc/mysql/conf.d/config-file.cnf`, 
@@ -724,27 +747,108 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     改mysql的配置文件就只需要把mysql配置文件放在自定义的文件夹下（/conf/mysql）
 
     ```bash
-    docker run --name some-mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    
-    docker run --name some-mysql -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag
-    
-    docker run --name some-mysql -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root-pwd 
+    docker run --name some-mysql -p 13306:3306 -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ```
     -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
     
-    * Docker Secrets
-        
-        In particular, this can be used to load passwords from Docker secrets stored in `/run/secrets/<secret_name>` files
-        
-        /run/secrets/<secret_name> 内容为密码字符串
+## docker清理占用的硬盘空间
+* docker内置清理prune（docker system prune）
+    * docker system df
     
-    /etc/docker/mysql/secrets/mysql-root
-    ```text
-    MYSQL_ROOT_PASSWORD=my-secret-pw
-    MYSQL_ROOT_HOST=10.100.11.12
-    MYSQL_DATABASE=new_database
-    MYSQL_USER=new_user
-    MYSQL_PASSWORD=pwd_for_new_user
+        docker system df，类似于Linux上的df命令，用于查看Docker的磁盘使用情况:
+        ```bash
+        docker system df
+        
+        TYPE                TOTAL               ACTIVE              SIZE                RECLAIMABLE
+        Images              147                 36                  7.204GB             3.887GB (53%)
+        Containers          37                  10                  104.8MB             102.6MB (97%)
+        Local Volumes       3                   3                   1.421GB             0B (0%)
+        Build Cache                                                 0B                  0B
+        ```
+    可知，Docker镜像占用了7.2GB磁盘，Docker容器占用了104.8MB磁盘，Docker数据卷占用了1.4GB磁盘。
+
+    * docker system prune
+        
+        命令可以用于清理磁盘，删除关闭的容器、无用的数据卷和网络，以及无tag的镜像。docker system prune -a命令清理得更加彻底，可以将没有容器使用Docker镜像都删掉。注意，这两个命令会把你暂时关闭的容器，以及暂时没有用到的Docker镜像都删掉了…所以使用之前一定要想清楚吶。
+
+        执行docker system prune -a命令之后，Docker占用的磁盘空间减少了很多：
+
+        ```bash
+        docker system df
+        
+        TYPE                TOTAL               ACTIVE              SIZE                RECLAIMABLE
+        Images              10                  10                  2.271GB             630.7MB (27%)
+        Containers          10                  10                  2.211MB             0B (0%)
+        Local Volumes       3                   3                   1.421GB             0B (0%)
+        Build Cache                                                 0B                  0B
+        ```
+* 手动清理Docker镜像/容器/数据卷
+
+    对于旧版的Docker(版本1.13之前)，是没有docker system命令的，因此需要进行手动清理。
+    
+    几个常用的命令，
+    ```bash
+    删除所有关闭的容器
+    docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm
+
+    删除所有无tag的镜像    
+    docker rmi $(docker images | grep "^<none>" | awk "{print $3}")
+    docker rmi $(docker images | grep "^" | awk "{print $3}")
+    docker rmi $(docker images | grep "none" | awk '{print $3}')
+    sudo docker rmi -f $(sudo docker images -a | awk {'print $3'})
+    
+    删除所有无用的volume数据卷
+    docker volume rm $(docker volume ls -qf dangling=true)
     ```
+
+* 限制容器的日志大小
+
+    有一次，当我使用1与2提到的方法清理磁盘之后，发现并没有什么作用，于是，我进行了一系列分析。
+
+    在Ubuntu上，Docker的所有相关文件，包括镜像、容器等都保存在/var/lib/docker/目录中：
+    ```bash
+    du -hs /var/lib/docker/
+    97G	/var/lib/docker/
+    ```
+    Docker竟然使用了将近100GB磁盘，这也是够了。
+    定位到真正占用这么多磁盘的目录：
+    ```bash
+    du -h -d 1 -S /var/lib/docker/containers
     
-    docker run --name mysql01 -p 13306:3306 -v /etc/docker/mysql/secrets:/run/secrets -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/mysql-root -d mysql
+    92G	/var/lib/docker/containers/a376aa694b22ee497f6fc9f7d15d943de91c853284f8f105ff5ad6c7ddae7a53
+    ```
+    由docker ps可知，nginx容器的ID恰好为a376aa694b22，与上面的目录/var/lib/docker/containers/a376aa694b22的前缀一致：
+    ```bash
+    docker ps
+    CONTAINER ID        IMAGE                                       COMMAND                  CREATED             STATUS              PORTS               NAMES
+    a376aa694b22        192.168.59.224:5000/nginx:1.12.1            "nginx -g 'daemon off"   9 weeks ago         Up 10 minutes                           nginx
+    ```
+    因此，nginx容器竟然占用了92GB的磁盘。进一步分析可知，真正占用磁盘空间的是nginx的日志文件。那么这就不难理解了。
+
+    * 使用truncate命令，可以将nginx容器的日志文件"清零"：
+
+    >truncate -s 0 /var/lib/docker/containers/a376aa694b22ee497f6fc9f7d15d943de91c853284f8f105ff5ad6c7ddae7a53/*-json.log
+
+    当然，这个命令只是临时有作用，日志文件迟早又会涨回来。
+    
+    要从根本上解决问题，需要限制nginx容器的日志文件大小。
+    
+    这个可以通过配置日志的max-size来实现，下面是nginx容器的docker-compose配置文件：
+    ```yaml
+    nginx:
+      image: nginx:1.12.1
+      restart: always
+      logging:
+        driver: "json-file"
+        options:
+          max-size: "5g"
+    ```
+    重启nginx容器之后，其日志文件的大小就被限制在5GB
+
+* 重启docker
+
+    还有当我清理了镜像、容器以及数据卷之后，发现磁盘空间并没有减少。
+    
+    根据Docker disk usage提到过的建议，我重启了Docker，发现磁盘使用率从83%降到了19%。
+    
+    根据高手指点，这应该是与内核3.13相关的BUG。
