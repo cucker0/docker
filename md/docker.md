@@ -556,6 +556,19 @@ always	|Always restart the container regardless of the exit status. When you spe
 * 示例
     >docker run --restart=always redis
 
+#### Publish port(发布端口，端口映射)
+Publish a container's port(s) to the host
+
+>docker run -d -p 127.0.0.1:80:8080/tcp ubuntu
+
+ip省略，为0.0.0.0，即所有IP
+
+前面的端口为主机的端口，后面的端口为容器端口
+
+/协议：/tcp, /udp or /sctp，缺省为/tcp
+
+[container links](https://docs.docker.com/network/links/)
+
 #### 修改Docker容器启动配置参数
 有时候，我们创建容器时忘了添加参数 --restart=always ，当 Docker 重启时，容器未能自动启动
 
@@ -577,20 +590,7 @@ always	|Always restart the container regardless of the exit status. When you spe
     最后启动容器。
     ```
 
-#### Publish port(发布端口，端口映射)
-Publish a container's port(s) to the host
-
->docker run -d -p 127.0.0.1:80:8080/tcp ubuntu
-
-ip省略，为0.0.0.0，即所有IP
-
-前面的端口为主机的端口，后面的端口为容器端口
-
-/协议：/tcp, /udp or /sctp，缺省为/tcp
-
-[container links](https://docs.docker.com/network/links/)
-
-##### 修改docker容器的挂载路径
+#### 修改docker容器的挂载路径
 1. 停止所有docker容器
     >docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
 2. 停止docker服务
@@ -672,7 +672,7 @@ ip省略，为0.0.0.0，即所有IP
 8. 启动所有docker容器
     >docker start $(docker ps -a |awk '{ print $1}' |tail -n +2)
 
-##### 修改docker默认的存储位置
+#### 修改docker默认的存储位置
 docker 的所有images及相关信息存储位置为：/var/lib/docker
 
 1. 查看默认的docker存储路径
@@ -750,7 +750,8 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     docker run --name some-mysql -p 13306:3306 -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ```
     -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
-    
+
+
 ## docker清理占用的硬盘空间
 ### 清理磁盘，删除关闭的容器、无用的数据卷和网络、以及无tag的镜像
 * docker system df
