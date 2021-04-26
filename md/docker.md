@@ -1114,3 +1114,26 @@ A tool for exploring a docker image, layer contents, and discovering ways to shr
         -v /var/run/docker.sock:/var/run/docker.sock \
         wagoodman/dive:latest mysql
     ```
+## 注意
+docker网络依赖iptables的nat转发，所以docker主机的iptables服务不能停和随意改动配置
+
+```
+docker start mysql01
+#
+Error response from daemon: driver failed programming external connectivity on endpoint mysql01 (dfba27af63764978a338be20fab2b3e08fa20a8c5ac179d87117708ef68afe25):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 13306 -j DNAT --to-destination 172.17.0.3:3306 ! -i docker0: iptables: No chain/target/match by that name.
+ (exit status 1))
+Error: failed to start containers: mysql01
+
+
+背景
+重启了docker主机的iptables服务
+
+导致 docker服务启动时定义的自定义链DOCKER被清除
+
+解决方法
+重启docker服务
+
+systemctl restart docker
+```
+
+
