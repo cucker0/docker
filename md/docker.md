@@ -752,6 +752,8 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
 
 
+* [mysql容器启动配置目录说明](./mysql容器实例.md)
+
 ## docker清理占用的硬盘空间
 ### 清理磁盘，删除关闭的容器、无用的数据卷和网络、以及无tag的镜像
 * docker system df

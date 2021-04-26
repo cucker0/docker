@@ -37,6 +37,15 @@ cff524e16f5c   mysql     "docker-entrypoint.s…"   18 hours ago   Up 18 hours  
 └── resolv.conf.hash
 ```
 
+* 查看默认的docker存储路径
+    ```bash
+    docker info |grep 'Docker Root Dir'
+    
+    # 
+    WARNING: No swap limit support
+    Docker Root Dir: /var/lib/docker
+    ```
+
 * config.v2.json
     <details>
     <summary>config.v2.json</summary>
@@ -86,7 +95,7 @@ cff524e16f5c   mysql     "docker-entrypoint.s…"   18 hours ago   Up 18 hours  
             "OpenStdin": false,
             "StdinOnce": false,
             "Env": [  // 环境变量
-                "MYSQL_ROOT_PASSWORD=py123456",  // mysql root用户的密码
+                "MYSQL_ROOT_PASSWORD=my-secret-pw",  // mysql root用户的密码
                 "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
                 "GOSU_VERSION=1.12",
                 "MYSQL_MAJOR=8.0",
