@@ -752,98 +752,95 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
     
 ## docker清理占用的硬盘空间
-* docker内置清理prune（docker system prune）
-    * docker system df
+### 清理磁盘，删除关闭的容器、无用的数据卷和网络、以及无tag的镜像
+* docker system df
+
+    docker system df，类似于Linux上的df命令，用于查看Docker的磁盘使用情况:
+    ```bash
+    docker system df
     
-        docker system df，类似于Linux上的df命令，用于查看Docker的磁盘使用情况:
-        ```bash
-        docker system df
-        
-        TYPE                TOTAL               ACTIVE              SIZE                RECLAIMABLE
-        Images              147                 36                  7.204GB             3.887GB (53%)
-        Containers          37                  10                  104.8MB             102.6MB (97%)
-        Local Volumes       3                   3                   1.421GB             0B (0%)
-        Build Cache                                                 0B                  0B
+    TYPE                TOTAL               ACTIVE              SIZE                RECLAIMABLE
+    Images              147                 36                  7.204GB             3.887GB (53%)
+    Containers          37                  10                  104.8MB             102.6MB (97%)
+    Local Volumes       3                   3                   1.421GB             0B (0%)
+    Build Cache                                                 0B                  0B
+    ```
+可知，Docker镜像占用了7.2GB磁盘，Docker容器占用了104.8MB磁盘，Docker数据卷占用了1.4GB磁盘。
+
+* docker system prune
+    
+    命令可以用于清理磁盘，删除关闭的容器、无用的数据卷和网络、以及无tag的镜像。docker system prune -a命令清理得更加彻底，可以将没有容器使用Docker镜像都删掉。注意，这两个命令会把你暂时关闭的容器，以及暂时没有用到的Docker镜像都删掉了…所以使用之前一定要想清楚吶。
+
+    执行docker system prune -a命令之后，Docker占用的磁盘空间减少了很多：
+
+    ```bash
+    docker system df
+    
+    TYPE                TOTAL               ACTIVE              SIZE                RECLAIMABLE
+    Images              10                  10                  2.271GB             630.7MB (27%)
+    Containers          10                  10                  2.211MB             0B (0%)
+    Local Volumes       3                   3                   1.421GB             0B (0%)
+    Build Cache                                                 0B                  0B
         ```
-    可知，Docker镜像占用了7.2GB磁盘，Docker容器占用了104.8MB磁盘，Docker数据卷占用了1.4GB磁盘。
+### 手动清理Docker镜像、容器、数据卷
+对于旧版的Docker(版本1.13之前)，是没有docker system命令的，因此需要进行手动清理。
 
-    * docker system prune
-        
-        命令可以用于清理磁盘，删除关闭的容器、无用的数据卷和网络，以及无tag的镜像。docker system prune -a命令清理得更加彻底，可以将没有容器使用Docker镜像都删掉。注意，这两个命令会把你暂时关闭的容器，以及暂时没有用到的Docker镜像都删掉了…所以使用之前一定要想清楚吶。
+**几个常用的命令**
+```bash
+删除所有关闭的容器
+docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm
 
-        执行docker system prune -a命令之后，Docker占用的磁盘空间减少了很多：
+删除所有无tag的镜像    
+docker rmi $(docker images | grep "^<none>" | awk "{print $3}")
+docker rmi $(docker images | grep "^" | awk "{print $3}")
+docker rmi $(docker images | grep "none" | awk '{print $3}')
+sudo docker rmi -f $(sudo docker images -a | awk {'print $3'})
 
-        ```bash
-        docker system df
-        
-        TYPE                TOTAL               ACTIVE              SIZE                RECLAIMABLE
-        Images              10                  10                  2.271GB             630.7MB (27%)
-        Containers          10                  10                  2.211MB             0B (0%)
-        Local Volumes       3                   3                   1.421GB             0B (0%)
-        Build Cache                                                 0B                  0B
-        ```
-* 手动清理Docker镜像/容器/数据卷
+删除所有无用的volume数据卷
+docker volume rm $(docker volume ls -qf dangling=true)
+```
 
-    对于旧版的Docker(版本1.13之前)，是没有docker system命令的，因此需要进行手动清理。
-    
-    几个常用的命令，
-    ```bash
-    删除所有关闭的容器
-    docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm
+### 限制容器的日志大小
+有一次，当我使用1与2提到的方法清理磁盘之后，发现并没有什么作用，于是，我进行了一系列分析。
 
-    删除所有无tag的镜像    
-    docker rmi $(docker images | grep "^<none>" | awk "{print $3}")
-    docker rmi $(docker images | grep "^" | awk "{print $3}")
-    docker rmi $(docker images | grep "none" | awk '{print $3}')
-    sudo docker rmi -f $(sudo docker images -a | awk {'print $3'})
-    
-    删除所有无用的volume数据卷
-    docker volume rm $(docker volume ls -qf dangling=true)
-    ```
+在Ubuntu上，Docker的所有相关文件，包括镜像、容器等都保存在/var/lib/docker/目录中：
+```bash
+du -hs /var/lib/docker/
+97G	/var/lib/docker/
+```
+Docker竟然使用了将近100GB磁盘，这也是够了。
+定位到真正占用这么多磁盘的目录：
+```bash
+du -h -d 1 -S /var/lib/docker/containers
 
-* 限制容器的日志大小
+92G	/var/lib/docker/containers/a376aa694b22ee497f6fc9f7d15d943de91c853284f8f105ff5ad6c7ddae7a53
+```
+由docker ps可知，nginx容器的ID恰好为a376aa694b22，与上面的目录/var/lib/docker/containers/a376aa694b22的前缀一致：
+```bash
+docker ps
+CONTAINER ID        IMAGE                                       COMMAND                  CREATED             STATUS              PORTS               NAMES
+a376aa694b22        192.168.59.224:5000/nginx:1.12.1            "nginx -g 'daemon off"   9 weeks ago         Up 10 minutes                           nginx
+```
+因此，nginx容器竟然占用了92GB的磁盘。进一步分析可知，真正占用磁盘空间的是nginx的日志文件。那么这就不难理解了。
 
-    有一次，当我使用1与2提到的方法清理磁盘之后，发现并没有什么作用，于是，我进行了一系列分析。
+### 使用truncate命令将容器的日志文件"清零"
+>truncate -s 0 /var/lib/docker/containers/a376aa694b22ee497f6fc9f7d15d943de91c853284f8f105ff5ad6c7ddae7a53/*-json.log
 
-    在Ubuntu上，Docker的所有相关文件，包括镜像、容器等都保存在/var/lib/docker/目录中：
-    ```bash
-    du -hs /var/lib/docker/
-    97G	/var/lib/docker/
-    ```
-    Docker竟然使用了将近100GB磁盘，这也是够了。
-    定位到真正占用这么多磁盘的目录：
-    ```bash
-    du -h -d 1 -S /var/lib/docker/containers
-    
-    92G	/var/lib/docker/containers/a376aa694b22ee497f6fc9f7d15d943de91c853284f8f105ff5ad6c7ddae7a53
-    ```
-    由docker ps可知，nginx容器的ID恰好为a376aa694b22，与上面的目录/var/lib/docker/containers/a376aa694b22的前缀一致：
-    ```bash
-    docker ps
-    CONTAINER ID        IMAGE                                       COMMAND                  CREATED             STATUS              PORTS               NAMES
-    a376aa694b22        192.168.59.224:5000/nginx:1.12.1            "nginx -g 'daemon off"   9 weeks ago         Up 10 minutes                           nginx
-    ```
-    因此，nginx容器竟然占用了92GB的磁盘。进一步分析可知，真正占用磁盘空间的是nginx的日志文件。那么这就不难理解了。
+当然，这个命令只是临时有作用，日志文件迟早又会涨回来。
 
-    * 使用truncate命令，可以将nginx容器的日志文件"清零"：
+要从根本上解决问题，需要限制nginx容器的日志文件大小。
 
-    >truncate -s 0 /var/lib/docker/containers/a376aa694b22ee497f6fc9f7d15d943de91c853284f8f105ff5ad6c7ddae7a53/*-json.log
-
-    当然，这个命令只是临时有作用，日志文件迟早又会涨回来。
-    
-    要从根本上解决问题，需要限制nginx容器的日志文件大小。
-    
-    这个可以通过配置日志的max-size来实现，下面是nginx容器的docker-compose配置文件：
-    ```yaml
-    nginx:
-      image: nginx:1.12.1
-      restart: always
-      logging:
-        driver: "json-file"
-        options:
-          max-size: "5g"
-    ```
-    重启nginx容器之后，其日志文件的大小就被限制在5GB
+这个可以通过配置日志的max-size来实现，下面是nginx容器的docker-compose配置文件：
+```yaml
+nginx:
+  image: nginx:1.12.1
+  restart: always
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "5g"
+```
+重启nginx容器之后，其日志文件的大小就被限制在5GB
 
 * 重启docker
 
@@ -852,3 +849,169 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     根据Docker disk usage提到过的建议，我重启了Docker，发现磁盘使用率从83%降到了19%。
     
     根据高手指点，这应该是与内核3.13相关的BUG。
+
+## 迁移image、container、volume
+### image迁移
+镜像的迁移，适用于离线环境。
+
+一般离线环境，都会自建Docker Registry。无论官方的、还是最近流行的Harbor，都是不错的选择。
+
+但是，这个世界上就是有些环境，就是没有外网，也没有内部的Registry。 
+
+这个时候要部署Docker的服务，怎么办？
+
+只能通过镜像的迁移。实际上，Harbor的offline installer就是采用这种形式。
+
+* 导出镜像为包文件(docker save)
+    ```bash
+    # use stdout
+    docker save alpine > /opt/docker/image_pkg/alpine.tar
+    
+    # or write to a file directly
+    docker save alpine -o /opt/docker/image_pkg/alpine.tar
+    ```
+    推荐使用 -o 的形式，因为利用stdout的做法虽然直观，但在某些场景下无效，比如利用ssh远程执行命令。
+
+* 复制镜像包文件到目标docker主机上
+    >scp -P 22 -rv /opt/docker/image_pkg/alpine.tar root@<目标主机IP>:/opt/docker/image_pkg
+    
+* 在目标docker主机导入镜像包文件(docker load)
+    ```bash
+    # use stdin
+    docker load < /opt/docker/image_pkg/alpine.tar
+    
+    # or read from a file directly
+    docker load -i /opt/docker/image_pkg/alpine.tar
+    ```
+* 查看所有的image
+    >docker images
+
+### container迁移
+容器的迁移，适用于已经上线，且状态复杂、从零开始启动不能正常工作的服务。
+
+**容器迁移步骤分两步**
+1. 镜像的迁移
+2. 容器的迁移
+
+#### 镜像的迁移参考上面Image的迁移，如image为alpine
+
+#### 容器的迁移
+* 导出容器为包文件(docker export)
+    先准备一个正在运行的服务，并且弄脏环境。
+    ```bash
+    docker run -d --name test alpine tail -f /dev/null
+    # 
+    9232f0c1dafe0f29918f281ca37bb41914677e818cb6f252abf3dab3be04fbb2
+    
+    docker exec test touch proof
+    
+    docker exec test ls -hl proof
+    # 
+    -rw-r--r--    1 root     root           0 Nov 20 14:33 proof
+    ```
+
+    把容器导出为一个tar包
+    >docker export test -o /opt/docker/container_pkg/test.tar
+
+* 复制容器包文件到目标docker主机上
+    >scp -P 22 -rv /opt/docker/container_pkg/test.tar root@<目标主机IP>:/opt/docker/container_pkg
+
+* 在目标docker主机上导入容器包文件(docker import)
+    ```bash
+    docker import /opt/docker/container_pkg/test.tar test-img
+    # 
+    sha256:e03727eeba7e16dd3acfcc7536f1244762508f9b6b9856e49cc837c1b7ffa444
+    ```
+
+    要注意的是，import后得到的是一个镜像，相当于是执行了docker commit后的内容。
+    当然，docker commit不是一个推荐的操作，所以容器的导入、导出，就显得不是那么的顺眼。
+
+* 检查之前创建的文件
+    ```bash
+    docker run --rm -d --name test test-img tail -f /dev/null
+    #
+    ee29cb63bb2d3ed8ac890789ba80c4fe4078b9d5343a8952b6217d64b4dcbe23
+    
+    docker exec test ls -hl proof
+    #
+    -rw-r--r--    1 root     root           0 Nov 20 14:33 proof
+    ```
+    可以看到，前面创建的文件是存在的，并且时间戳完全一致。
+
+### volume迁移
+![](../image/storage_architecture.png)
+
+数据卷的迁移，比较麻烦。Docker并未提供官方的简单方案。
+
+当然，直接用root用户访问文件系统的Docker数据，  
+比如默认的/var/lib/docker/volumes/ 下的文件夹，直接进行打包操作，也不是不行。  
+但这毫无疑问是最糟糕的方案。
+
+目前参考《 Use volumes | Docker Documentation 》，找到的最佳方案是，  
+**用另一个容器，把数据卷内容打包，并且通过挂载的形式传递到宿主机。**
+
+#### 备份volume
+* 准备一个Volume。
+    ```bash
+    docker run --rm -d --name test -v /opt/docker/volumes/test-vol:/data test-img tail -f /dev/null
+    #
+    f4ff81f4c31025ff476fbebc2c779a915b43ba5940b5bcc42e3ef9b1379eaeab
+    
+    docker exec test touch /data/proof
+    
+    docker exec test ls -hl proof
+    #
+    -rw-r--r--    1 root     root           0 Nov 20 14:40 proof
+    ```
+
+* 执行备份操作
+    ```bash
+    docker run --rm -v /opt/docker/volumes/test-vol:/volume -v /opt/docker/volumes_bak/test-vol/:/backup alpine tar cvf /backup/backup.tar /volume
+    #
+    /volume
+    /volume/proof
+    ```
+
+    这里利用了一个 alpine 镜像来执行操作。 实际上，任何一个.tar后缀的镜像都是可以的。
+    
+    * 直接在已运行容器中打包，然后通过 docker cp 复制出来，也是一个方案。
+    
+        但这会对正在运行的容器有影响，不建议在真正重要的容器中使用。
+
+
+* 复制volume备份文件到目标docker主机上
+    >scp -P 22 -rv /opt/docker/volumes_bak/test-vol/backup.tar root@<目标主机IP>:/opt/docker/volumes_bak/test-vol
+
+#### 恢复volume备份文件
+* 在目标docker主机上，恢复volume备份文件
+    ```bash
+    docker run -d --name new-test -v /opt/docker/volumes/test-vol:/data -v /opt/docker/volumes_bak/test-vol:/backup alpine
+    
+    # 获取该容器的stdin，并恢复备份文件，即解压tar文件
+    docker exec -it new-test bash
+    root@cff524e16f5c:/# tar xf /backup/backup.tar -C /data
+    ```
+
+* 新的容器中检查还原后的结果。
+    ```bash
+    docker run --rm -v test-vol:/data alpine ls -ahl /data
+    #
+    total 8
+    drwxr-xr-x    2 root     root        4.0K Nov 20 14:48 .
+    drwxr-xr-x    1 root     root        4.0K Nov 20 14:50 ..
+    -rw-r--r--    1 root     root           0 Nov 20 14:40 proof
+    ```
+
+### 迁移image、container、volume总结
+以上其实都不是常规手段。
+
+`Image的传递`，更应该依赖于内部Docker Registry而非tar。  
+（当然，也有例外，比如集群部署大镜像的P2P方案，也许可以借鉴这个手段。）
+
+`Container的状态`，应该是可弃的。  
+一个运行了很长时间的Container，应该是可以 restart 、甚至 kill 后再重新 run 也不影响既有功能的。  
+任何有依赖的状态，都应该考虑持久化、网络化，而不能单纯地保存在本地文件系统中。
+
+`Volume的手动迁移`，的确可以采用上述方式。但是，Volume需要手动迁移、备份吗？这需要专业而完善的插件来实现。
+
+
