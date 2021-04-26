@@ -260,6 +260,23 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
           --no-prune   Do not delete untagged parents
     ```
 
+* 查看镜像制作的历史
+    [docker history](https://docs.docker.com/engine/reference/commandline/history/)
+    可具体的制作步骤
+    ```bash
+    docker history --no-trunc <IMAGE>
+    # 等价于下面的命令
+    docker image history [OPTIONS] IMAGE
+    
+    # 自定义格式
+    docker history --no-trunc --format "{{.CreatedAt}} | {{.CreatedBy}}  |{{.Comment}}" <IMAGE>
+    ```
+* 查看镜像的详细信息
+    ```bash
+    docker image inspect [OPTIONS] IMAGE [IMAGE...]
+    ```
+    
+
 ### 容器操作
 * 搜索镜像
     >docker search tomcat
@@ -751,6 +768,8 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     ```
     -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
 
+DROP DATABASE [IF EXISTS] books;
+[IF EXISTS]
 
 * [mysql容器启动配置目录说明](./mysql容器实例.md)
 
@@ -1018,3 +1037,80 @@ nginx:
 `Volume的手动迁移`，的确可以采用上述方式。但是，Volume需要手动迁移、备份吗？这需要专业而完善的插件来实现。
 
 
+## tomastomecek/sen--docker engine终端用户界面
+containers、images管理终端用户界面管理工具
+
+[TomasTomecek/sen](https://github.com/TomasTomecek/sen)
+
+`sen` is a terminal user interface for docker engine.
+
+
+
+* 功能
+    * it can interactively manage your `containers` and `images`:
+    * manage? start, stop, restart, kill, delete,...
+    * there is a "dashboard" view for containers and images
+    * you are able to inspect containers and images
+    * sen can fetch logs of containers and even stream logs real-time
+    * some buffers support searching and filtering
+    * sen receives real-time updates from docker when anything changes
+    * e.g. if you pull a container in another terminal, sen will pick it up
+    * sen notifies you whenever something happens (and reports slow queries)
+    * supports a lot of vim-like keybindings (j, k, gg, /, ...)
+    * you can get interactive tree view of all images (equivalent of docker images --tree)
+    * see how much space containers, images and volumes occupy (just type :df)
+
+    You can see the features yourself.
+    ![](../image/sen-preview.gif)
+
+* Installation and running sen
+    ```bash
+    docker pull tomastomecek/sen
+    
+    # 直接运行，弹出终端用户界面
+    docker run -v /var/run/docker.sock:/run/docker.sock -ti -e TERM tomastomecek/sen
+    
+    # 后台运行
+    docker run --name tomastomece_sen -d -v /var/run/docker.sock:/run/docker.sock -e TERM tomastomecek/sen
+    
+    docker exec -it tomastomece_sen sh
+    sen
+    ```
+* 操作键
+    [keybindings](https://github.com/TomasTomecek/sen#keybindings)
+    
+    光标选择 进程后，再按 Enter 键，在Layers项中可以查看层依赖关系
+    
+## wagoodman/dive--image,layer contents探索工具
+image, layer contents探索工具
+
+[dive](https://github.com/wagoodman/dive)
+A tool for exploring a docker image, layer contents, and discovering ways to shrink the size of your Docker/OCI image.
+
+![](../image/dive_demo.gif)
+
+* Basic Features
+    * Show Docker image contents broken down by layer  按层分解方式来显示镜像内容
+    * Indicate what's changed in each layer  指出每一层目录的变化
+    * Estimate "image efficiency"  预估镜像的效率
+    * Quick build/analysis cycles  快速构建/分析
+    * CI Integration  集成CI
+
+* running dive by docker
+    ```bash
+    docker pull wagoodman/dive
+    
+    # 直接运行，退出时自动删除该容器
+    docker run --rm -it \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        wagoodman/dive:latest <dive arguments...>
+    
+    docker run --rm -it \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        wagoodman/dive:latest <image_name|image_id>
+    
+    # 示例
+    docker run --rm -it \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        wagoodman/dive:latest mysql
+    ```
