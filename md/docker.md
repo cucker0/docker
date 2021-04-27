@@ -751,9 +751,10 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
 
 2. 启动一个mysql容器
     ```bash
-    docker run --name mysql01 -d -p 13306:3306 -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql
+    docker run --name mysql01 --restart=always -d -p 13306:3306 -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql
+    // --restart=always  当Docker daemon重启后，该容器自动启动
     
-    docker run --name mysql02 -d -p 13306:3306 -v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql:tag
+    docker run --name mysql02 --restart=always -d -p 13306:3306 -v /conf/mysql:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=my-secret-pw mysql:tag
     ```
     This will start a new container some-mysql where the MySQL instance uses the combined startup settings 
     from `/etc/mysql/my.cnf` and `/etc/mysql/conf.d/config-file.cnf`, 
@@ -764,12 +765,9 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     改mysql的配置文件就只需要把mysql配置文件放在自定义的文件夹下（/conf/mysql）
 
     ```bash
-    docker run --name some-mysql -p 13306:3306 -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    docker run --name some-mysql --restart=always -p 13306:3306 -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ```
     -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
-
-DROP DATABASE [IF EXISTS] books;
-[IF EXISTS]
 
 * [mysql容器启动配置目录说明](./mysql容器实例.md)
 
@@ -1115,25 +1113,60 @@ A tool for exploring a docker image, layer contents, and discovering ways to shr
         wagoodman/dive:latest mysql
     ```
 ## 注意
+### iptables服务重启后，导致docker的iptables规则丢失解决办法
 docker网络依赖iptables的nat转发，所以docker主机的iptables服务不能停和随意改动配置
 
-```
-docker start mysql01
-#
-Error response from daemon: driver failed programming external connectivity on endpoint mysql01 (dfba27af63764978a338be20fab2b3e08fa20a8c5ac179d87117708ef68afe25):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 13306 -j DNAT --to-destination 172.17.0.3:3306 ! -i docker0: iptables: No chain/target/match by that name.
- (exit status 1))
-Error: failed to start containers: mysql01
+* 方法1：重启ipables之前，先保存iptables配置。在执行重启iptables服务
+    ```bash
+    service iptables save
+    systemctl restart iptables
+    ```
+    优化，在执行systemctl stop iptables 时，自动保存配置
+    修改 /usr/libexec/iptables/iptables.init 的stop(),reload()方法，是其执行这些方法时，自动保存配置
+    ```text
+    ...
+    stop() {
+        local ret=0
+    
+        # Do not stop if iptables module is not loaded.
+        [ ! -e "$PROC_IPTABLES_NAMES" ] && return 0
+        
+        # save iptables config
+        save  
+        ...
+    }
 
+    reload() {
+        # save iptables config
+        save 
+      
+        local ret=0
+        ...
+    }
 
-背景
-重启了docker主机的iptables服务
+    ...  
+    ```
 
-导致 docker服务启动时定义的自定义链DOCKER被清除
+* 方法2：重启iptables后，在重启docker服务
 
-解决方法
-重启docker服务
-
-systemctl restart docker
-```
+    这将影响本主机上所有的docer容器，所有容器都需重启
+    ```
+    docker start mysql01
+    #
+    Error response from daemon: driver failed programming external connectivity on endpoint mysql01 (dfba27af63764978a338be20fab2b3e08fa20a8c5ac179d87117708ef68afe25):  (iptables failed: iptables --wait -t nat -A DOCKER -p tcp -d 0/0 --dport 13306 -j DNAT --to-destination 172.17.0.3:3306 ! -i docker0: iptables: No chain/target/match by that name.
+     (exit status 1))
+    Error: failed to start containers: mysql01
+    
+    
+    背景
+    重启了docker主机的iptables服务
+    
+    导致 docker服务启动时定义的自定义链DOCKER被清除
+    
+    解决方法
+    重启docker服务
+    
+    systemctl restart docker
+    ```
 
 
