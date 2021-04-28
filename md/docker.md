@@ -767,8 +767,11 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     ```bash
     docker run --name some-mysql --restart=always -p 13306:3306 -v /my/own/datadir:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql:tag --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     ```
-    -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录
-
+    -v /my/own/datadir:/var/lib/mysql  // mysql data dir, 保存mysql数据的目录，把docker主机的/my/own/datadir挂载到容器的/var/lib/mysql目录  
+    --character-set-server=utf8mb4  // 库的字符集  
+    --collation-server=utf8mb4_unicode_ci  // 库的排序规则
+    
+    
 * [mysql容器启动配置目录说明](./mysql容器实例.md)
 
 ## docker清理占用的硬盘空间
