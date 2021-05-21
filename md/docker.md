@@ -609,7 +609,9 @@ ip省略，为0.0.0.0，即所有IP
 
 #### 修改docker容器的挂载路径
 1. 停止所有docker容器
-    >docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
+    >docker stop `docker ps -a |awk '{ print $1}' |tail -n +2`  
+    docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
+       
 2. 停止docker服务
     >service docker stop
     
