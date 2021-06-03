@@ -2,13 +2,50 @@ docker的使用
 ==
 
 ## 简介
-**Docker**是一个开源的应用容器引擎；是一个轻量级容器技术；
+* docker是什么
+    ```text
+    Docker是基于Go语言实现的云开源项目。Docker的主要目标是"Build，Ship and Run Any App, Anywhere"
+    
+    理念：使用应用能够"一次封装，到处运行"
+  
+    解决了运行环境和配置问题软件容器，方便做持续集成并有助于整体发布的容器虚拟化技术。
+    
+    **Docker**是一个开源的应用容器引擎；是一个轻量级容器技术；
+    
+    Docker支持将软件编译成一个镜像；然后在镜像中各种软件做好配置，将镜像发布出去，其他使用者可以直接使用这个镜像；
+    
+    运行中的这个镜像称为容器，容器启动是非常快速的。
+    ```
+    
+    * docker容器类似一个极简版的mini Linux系统
 
-Docker支持将软件编译成一个镜像；然后在镜像中各种软件做好配置，将镜像发布出去，其他使用者可以直接使用这个镜像；
+* 官网资料
+    * [docker官网](https://www.docker.com/)
+    * [官方文档](https://docs.docker.com/)
+    * [docker仓库](https://hub.docker.com/)
 
-运行中的这个镜像称为容器，容器启动是非常快速的
+### docker容器与VM对比
+* 为什么docker比VM块
+    * docker有着比虚拟机更少的抽象层。
+    * docker利用的是宿主机的内核，不需要GuestOS
+    ![](../image/docker_vs_VM.png)
 
-[docker官网](https://www.docker.com/)
+* 细节对比
+
+项 |docker容器 |VM(虚拟机)
+:--- |:--- |:---
+操作系统 |与宿主机共享OS |宿主机OS上运行虚拟机OS 
+存储大小 |镜像小，便于存储与传输 |镜像庞大(vmdk, vdi等) 
+运行性能 |几乎无额外性能损失 |VM OS操作系统额外的CPU、内存消耗，损失5%左右
+移植性 |轻便、灵活，适用于Linux | 笨重，与虚拟化技术耦合度高，ESXi, hyper-v, KVM
+硬件亲和性 |面向开发者 |面向硬件运维者 
+部署速度 |快速，秒级 |较慢，分钟级 
+单台宿主机可部署数量|100-1000个 |<100台 
+宿主机操作系统 |主要支持Linux |几乎所有操作系统 
+隔离性 |进程级 |系统级(更彻底)
+封装程度 |只打包项目代码和依赖关系，共享宿主机kenel |完整的操作系统  
+磁盘占用 |MB级别 |GB级别   
+
 
 ## docker结构体系
 ![](../image/docker_architecture.svg)
@@ -169,8 +206,56 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     ```
     You must delete any edited configuration files manually.
 
+### 配置镜像加速
+修改daemon配置文件 /etc/docker/daemon.json 来使用加速器
+
+* 阿里云docker镜像
+
+    参考[镜像加速器](https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors)
+    ```bash
+    sudo mkdir -p /etc/docker
+    sudo tee /etc/docker/daemon.json <<-'EOF'
+    {
+      "registry-mirrors": ["https://<你的ID>.mirror.aliyuncs.com"]
+    }
+    EOF
+    
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker
+    ```
+* 网易docker镜像
+    ```bash
+    sudo mkdir -p /etc/docker
+    sudo tee /etc/docker/daemon.json <<-'EOF'
+    {
+      "registry-mirrors": ["https://hub-mirror.c.163.com/"]
+    }
+    EOF
+    
+    sudo systemctl daemon-reload
+    sudo systemctl restart docker
+    ```
+
+* 验证配置的镜像加速是否生效
+    ```bash
+    docker info
+    
+    # 看是否有
+    Registry Mirrors:
+        https://xxx
+    ```
+
 ## docker的常用操作
 [docker CLI命令行](https://docs.docker.com/engine/reference/commandline/docker/)
+
+### 帮助命令
+* docker --help
+
+    子命令的帮助
+    >docker COMMAND --help 
+* docker info
+* docker version
+
 
 ### 镜像操作
 * 搜索镜像
@@ -275,7 +360,10 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     ```bash
     docker image inspect [OPTIONS] IMAGE [IMAGE...]
     ```
-    
+* 删除所有的image
+    ```bash
+    docker rmi -f `docker images -qa`
+    ```
 
 ### 容器操作
 * 搜索镜像
@@ -298,6 +386,10 @@ Docker支持将软件编译成一个镜像；然后在镜像中各种软件做�
     >docker stop [OPTIONS] CONTAINER [CONTAINER...]  
     docker stop CONTAINER_ID
     
+* 强制停止容器
+    >docker kill [OPTIONS] CONTAINER [CONTAINER...]  
+    docker kill CONTAINER_ID
+
 * 查看所有的容器，包括停止运行的
     >docker ps -a  
 
@@ -422,6 +514,16 @@ The `--tmpfs` flag mounts an empty tmpfs into the container with the `rw`, `noex
 
 
 ##### Mount volume (-v, --read-only)挂载卷
+语法
+```bash
+docker run -v 主机目录1路径:映射为容器目录1路径[:ro/rw] -v 主机目录2路径:映射为容器目录2路径[:ro/rw] IMAGE [开机要执行的命令]
+```
+* rw
+    >可读写，缺省值
+* ro
+    >只读
+
+
 ```bash
 docker run -v `pwd`:`pwd` -w `pwd` -i -t  ubuntu pwd
 ```
@@ -573,6 +675,51 @@ always	|Always restart the container regardless of the exit status. When you spe
 * 示例
     >docker run --restart=always redis
 
+#### 退出容器
+* 方式1，退出tty并关闭容器
+    >在容器中执行`exit`命令
+* 方式2，退出tty，容器在后台继续运行
+    >Ctrl + P + Q
+
+
+
+#### 进入正在运行的容器并以命令行交互
+
+* docker exec
+
+    Run a command in a running container 想正在运行的容器执行一条命令，可以启动新的进程
+
+    语法
+    ```bash
+    docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+    ```
+    
+    示例，启动新的进程
+    ```bash
+    docker exec -it ubuntu_bash bash
+    ```
+* docker attach 容器ID
+    
+    直接进入容器启动命令的终端，不会启动新的进程
+
+#### 容器与host宿主机互拷文件
+Copy files/folders between a container and the local filesystem
+
+Usage:  
+```bash
+docker cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-
+
+docker cp [OPTIONS] SRC_PATH|- CONTAINER:DEST_PATH
+```
+```text
+Use '-' as the source to read a tar archive from stdin
+    and extract it to a directory destination in a container.
+
+Use '-' as the destination to stream a tar archive of a
+    container source to stdout.
+```
+
+
 #### Publish port(发布端口，端口映射)
 Publish a container's port(s) to the host
 
@@ -609,8 +756,10 @@ ip省略，为0.0.0.0，即所有IP
 
 #### 修改docker容器的挂载路径
 1. 停止所有docker容器
-    >docker stop `docker ps -a |awk '{ print $1}' |tail -n +2`  
+    ```bash
+    docker stop `docker ps -qa`
     docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
+    ```
        
 2. 停止docker服务
     >service docker stop
@@ -689,7 +838,10 @@ ip省略，为0.0.0.0，即所有IP
     >service docker start
 
 8. 启动所有docker容器
-    >docker start $(docker ps -a |awk '{ print $1}' |tail -n +2)
+    ```bash
+    docker start `docker ps -qa`
+    sudo docker start $(docker ps -a | awk '{ print $1}' | tail -n +2)
+    ```
 
 #### 修改docker默认的存储位置
 docker 的所有images及相关信息存储位置为：/var/lib/docker
@@ -704,7 +856,9 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
     ```
 
 2. 停止所有docker容器
-    >sudo docker stop $(docker ps -a |awk '{ print $1}' |tail -n +2)
+    ```bash
+    sudo docker stop `docker ps -qa`
+    ```
 
 3. 停止docker服务
     >sudo service docker stop
@@ -731,7 +885,9 @@ docker 的所有images及相关信息存储位置为：/var/lib/docker
 6. 启动docker服务
     >sudo service docker start
 7. 启动所有docker容器
-    >sudo docker start $(docker ps -a | awk '{ print $1}' | tail -n +2)
+    ```bash
+    sudo docker start `docker ps -qa`
+    ```
 8. 查看修改后docker存储路径
     ```bash
     docker info |grep 'Docker Root Dir'
