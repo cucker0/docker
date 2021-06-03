@@ -737,7 +737,12 @@ ip省略，为0.0.0.0，即所有IP
 有时候，我们创建容器时忘了添加参数 --restart=always ，当 Docker 重启时，容器未能自动启动
 
 * 方法1: Docker命令修改
-    >docker container update --restart=always 容器名字/ID
+    ```bash
+    docker container update --restart=always 容器名字/ID
+    
+    # 或
+    docker container update --restart=unless-stopped 容器名字/ID
+    ```
 
 * 方法2: 直接改配置文件
     ```text
