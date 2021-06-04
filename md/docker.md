@@ -92,6 +92,10 @@ docker的使用
 3. 使用docker运行这个镜像，就生成了基于这个镜像的docker容器
 4. 对容器的启动/停止，可以控制对应用的启动/停止
 
+## 特别说明
+* docker的设计与git很类似，如image、registrie、container等
+* 当container容器中没有进程在运行时，会自动退出。因为它认为没有任务要执行了
+
 
 ## 安装docker
 * [Install Docker Engine](https://docs.docker.com/engine/install/)
