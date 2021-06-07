@@ -1,0 +1,233 @@
+[
+  {
+    "Id": "d73a3ce5b515f17b78fadb8d2cf360833e2e740c6493024227627d5170ad4123",
+    "Created": "2021-06-07T08:22:01.821735545Z",
+    "Path": "/bin/sh",
+    "Args": [
+      "-c",
+      "/bin/bash"
+    ],
+    "State": {
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 56034,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2021-06-07T08:22:02.072535488Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+    },
+    "Image": "sha256:0ebe156056056a0b79ba737e9fec3f9613ed1044b9dd4109d7180906d88acaec",
+    "ResolvConfPath": "/var/lib/docker/containers/d73a3ce5b515f17b78fadb8d2cf360833e2e740c6493024227627d5170ad4123/resolv.conf",
+    "HostnamePath": "/var/lib/docker/containers/d73a3ce5b515f17b78fadb8d2cf360833e2e740c6493024227627d5170ad4123/hostname",
+    "HostsPath": "/var/lib/docker/containers/d73a3ce5b515f17b78fadb8d2cf360833e2e740c6493024227627d5170ad4123/hosts",
+    "LogPath": "/var/lib/docker/containers/d73a3ce5b515f17b78fadb8d2cf360833e2e740c6493024227627d5170ad4123/d73a3ce5b515f17b78fadb8d2cf360833e2e740c6493024227627d5170ad4123-json.log",
+    "Name": "/mycentos02",
+    "RestartCount": 0,
+    "Driver": "overlay2",
+    "Platform": "linux",
+    "MountLabel": "",
+    "ProcessLabel": "",
+    "AppArmorProfile": "",
+    "ExecIDs": null,
+    "HostConfig": {
+      "Binds": null,
+      "ContainerIDFile": "",
+      "LogConfig": {
+        "Type": "json-file",
+        "Config": {}
+      },
+      "NetworkMode": "default",
+      "PortBindings": {},
+      "RestartPolicy": {
+        "Name": "no",
+        "MaximumRetryCount": 0
+      },
+      "AutoRemove": false,
+      "VolumeDriver": "",
+      "VolumesFrom": [
+        "mycentos01"
+      ],
+      "CapAdd": null,
+      "CapDrop": null,
+      "CgroupnsMode": "host",
+      "Dns": [],
+      "DnsOptions": [],
+      "DnsSearch": [],
+      "ExtraHosts": null,
+      "GroupAdd": null,
+      "IpcMode": "private",
+      "Cgroup": "",
+      "Links": null,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyRootfs": false,
+      "SecurityOpt": null,
+      "UTSMode": "",
+      "UsernsMode": "",
+      "ShmSize": 67108864,
+      "Runtime": "runc",
+      "ConsoleSize": [
+        0,
+        0
+      ],
+      "Isolation": "",
+      "CpuShares": 0,
+      "Memory": 0,
+      "NanoCpus": 0,
+      "CgroupParent": "",
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": [],
+      "BlkioDeviceReadBps": null,
+      "BlkioDeviceWriteBps": null,
+      "BlkioDeviceReadIOps": null,
+      "BlkioDeviceWriteIOps": null,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "Devices": [],
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "KernelMemory": 0,
+      "KernelMemoryTCP": 0,
+      "MemoryReservation": 0,
+      "MemorySwap": 0,
+      "MemorySwappiness": null,
+      "OomKillDisable": false,
+      "PidsLimit": null,
+      "Ulimits": null,
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "IOMaximumIOps": 0,
+      "IOMaximumBandwidth": 0,
+      "MaskedPaths": [
+        "/proc/asound",
+        "/proc/acpi",
+        "/proc/kcore",
+        "/proc/keys",
+        "/proc/latency_stats",
+        "/proc/timer_list",
+        "/proc/timer_stats",
+        "/proc/sched_debug",
+        "/proc/scsi",
+        "/sys/firmware"
+      ],
+      "ReadonlyPaths": [
+        "/proc/bus",
+        "/proc/fs",
+        "/proc/irq",
+        "/proc/sys",
+        "/proc/sysrq-trigger"
+      ]
+    },
+    "GraphDriver": {
+      "Data": {
+        "LowerDir": "/var/lib/docker/overlay2/ff51c1ce94b8f31afd07eb1af3fa833c6de240e0febd8817ea11b002bc42df81-init/diff:/var/lib/docker/overlay2/9fbd2515b11e6dce6bac762900cc1eca19f6f5912140598ddf4d857b14bd3d08/diff",
+        "MergedDir": "/var/lib/docker/overlay2/ff51c1ce94b8f31afd07eb1af3fa833c6de240e0febd8817ea11b002bc42df81/merged",
+        "UpperDir": "/var/lib/docker/overlay2/ff51c1ce94b8f31afd07eb1af3fa833c6de240e0febd8817ea11b002bc42df81/diff",
+        "WorkDir": "/var/lib/docker/overlay2/ff51c1ce94b8f31afd07eb1af3fa833c6de240e0febd8817ea11b002bc42df81/work"
+      },
+      "Name": "overlay2"
+    },
+    "Mounts": [
+      {
+        "Type": "volume",
+        "Name": "6306200cc349b07bda798ba81d7a35507aba61171c4913f8f905f4fe7f828494",
+        "Source": "/var/lib/docker/volumes/6306200cc349b07bda798ba81d7a35507aba61171c4913f8f905f4fe7f828494/_data",
+        "Destination": "/data1",
+        "Driver": "local",
+        "Mode": "",
+        "RW": true,
+        "Propagation": ""
+      },
+      {
+        "Type": "volume",
+        "Name": "a4702555253e1b6767d49e82ddaf99023db345f89f7444a61d8bed4a4aa1c63b",
+        "Source": "/var/lib/docker/volumes/a4702555253e1b6767d49e82ddaf99023db345f89f7444a61d8bed4a4aa1c63b/_data",
+        "Destination": "/data2",
+        "Driver": "local",
+        "Mode": "",
+        "RW": true,
+        "Propagation": ""
+      }
+    ],
+    "Config": {
+      "Hostname": "d73a3ce5b515",
+      "Domainname": "",
+      "User": "",
+      "AttachStdin": true,
+      "AttachStdout": true,
+      "AttachStderr": true,
+      "Tty": true,
+      "OpenStdin": true,
+      "StdinOnce": true,
+      "Env": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      ],
+      "Cmd": [
+        "/bin/sh",
+        "-c",
+        "/bin/bash"
+      ],
+      "Image": "hanxiao/mycentos:1.1",
+      "Volumes": {
+        "/data1": {},
+        "/data2": {}
+      },
+      "WorkingDir": "",
+      "Entrypoint": null,
+      "OnBuild": null,
+      "Labels": {
+        "org.label-schema.build-date": "20201204",
+        "org.label-schema.license": "GPLv2",
+        "org.label-schema.name": "CentOS Base Image",
+        "org.label-schema.schema-version": "1.0",
+        "org.label-schema.vendor": "CentOS"
+      }
+    },
+    "NetworkSettings": {
+      "Bridge": "",
+      "SandboxID": "7201a22f493944236ab362546c55816c5365e0e5344c0fcd692761a1e2090419",
+      "HairpinMode": false,
+      "LinkLocalIPv6Address": "",
+      "LinkLocalIPv6PrefixLen": 0,
+      "Ports": {},
+      "SandboxKey": "/var/run/docker/netns/7201a22f4939",
+      "SecondaryIPAddresses": null,
+      "SecondaryIPv6Addresses": null,
+      "EndpointID": "31a0942f7163295b95fc1dc68f534429bb0f9d8a2e5fb2a57a7cf46eeaf36c95",
+      "Gateway": "172.17.0.1",
+      "GlobalIPv6Address": "",
+      "GlobalIPv6PrefixLen": 0,
+      "IPAddress": "172.17.0.5",
+      "IPPrefixLen": 16,
+      "IPv6Gateway": "",
+      "MacAddress": "02:42:ac:11:00:05",
+      "Networks": {
+        "bridge": {
+          "IPAMConfig": null,
+          "Links": null,
+          "Aliases": null,
+          "NetworkID": "1dd95bea7598655bdb448f165055721b504c10d396377730dee69baf8150340b",
+          "EndpointID": "31a0942f7163295b95fc1dc68f534429bb0f9d8a2e5fb2a57a7cf46eeaf36c95",
+          "Gateway": "172.17.0.1",
+          "IPAddress": "172.17.0.5",
+          "IPPrefixLen": 16,
+          "IPv6Gateway": "",
+          "GlobalIPv6Address": "",
+          "GlobalIPv6PrefixLen": 0,
+          "MacAddress": "02:42:ac:11:00:05",
+          "DriverOpts": null
+        }
+      }
+    }
+  }
+]
