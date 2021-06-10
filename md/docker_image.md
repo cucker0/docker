@@ -80,7 +80,12 @@ UnionFS: 联合文件系统
 
 "容器层"之下的都叫"镜像层"。
 
-### docker commit
+### 创建镜像
+生成镜像有两种方式
+* docker commit 容器
+* 由Dockerfile文件docker build镜像
+
+#### docker commit
 Create a new image from a container's changes
 
 以容器为副本创建镜像，相当于容器的快照。容器可以是运行的或是停止的
@@ -104,3 +109,36 @@ Create a new image from a container's changes
         docker commit -a "Hanxiao <hanxiao2100@qq.com>" -m "Ningx with install vim" 容器ID或容器名 mynginx:1.1
         docker commit -a "Hanxiao <hanxiao2100@qq.com>" -m "Ningx with install vim" 容器ID或容器名 mynginx:latest
         ```
+#### 由Dockerfile文件docker build镜像
+* Dockerfile
+
+    /mydocker/Dockerfile4
+    ```text
+    FROM centos
+    LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
+    RUN yum install -y nginx
+    RUN echo "Nginx Web: CMD defining default arguments for an ENTRYPOINT" > /usr/share/nginx/html/index.html
+    EXPOSE 80
+    CMD ["-g", "daemon off;"]
+    ENTRYPOINT ["/usr/sbin/nginx"]
+    You have new mail in /var/spool/mail/root
+    [root@bind-dns mydocker]# 
+    [root@bind-dns mydocker]# cat Dockerfile_nginx_4
+    FROM centos
+    LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
+    RUN yum install -y nginx
+    RUN echo "Nginx Web: CMD defining default arguments for an ENTRYPOINT" > /usr/share/nginx/html/index.html
+    EXPOSE 80
+    CMD ["-g", "daemon off;"]
+    ENTRYPOINT ["/usr/sbin/nginx"]
+    ```
+* 构建镜像
+    ```bash
+    docker build -f /mydocker/Dockerfile_nginx_4 -t hanxiao/mynginx:4.1 /mydocker
+    ```
+* 测试镜像
+    ```bash
+    docker run -d --name mynginx -p 5003:80 hanxiao/mynginx:4.1
+    ```
+    
+    * 浏览器访问 http://<IP>:5003，访问正常
