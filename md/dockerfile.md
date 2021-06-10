@@ -292,7 +292,7 @@ FROM之后的指令引用
 #### VOLUME
 创建容器数据卷。用于数持久化
 
-创建具体指定名称的挂载点，用来保存来自宿主机或其他容器的数据卷
+创建具体指定名称的挂载点，将其标识为用来保存来自宿主机或其他容器的数据卷
 
 * syntax
     ```bash
@@ -308,10 +308,113 @@ VOLUME /var/log /var/db
 ```
 
 #### CMD
+设置容器启动时要运行的主命令(main command)
+
+Dockerfile中只需要一个`CMD`，如果有写多个`CMD`，只有最后一个`CMD`生效，所以建议只写一个
+
+`CMD`在镜像构建阶段中不会中任何事情。
+
+而`RUN`是会执行的命令，并会提交结果
+
+* syntax（有三种格式）
+    * exec form，首选格式
+        ```bash
+        CMD ["executable","param1","param2"]
+        ```
+        * 执行的命令：`executable param1 param2`
+        * 进程的PID为1
+        * executable为非shell的可执行程序时，要求写完整路径
+        * []JSON数组里的元素必须以双引`"`号包裹，不能是单引号`'`
+        * 不能引用环境变量
+                    
+            不可用示例
+            ```text
+            CMD [ "echo", "$HOME" ]
+            ```
+            如果非要使用环境变量，可以这么干
+            ```text
+            CMD [ "sh", "-c", "echo $HOME" ]
+            ```
+    * 作为`ENTRYPOINT []`的默认参数，这也是exec form。这也是CMD的主要用途。[参考 CMD为ENTRYPOINT定义默认参数](Dockerfile中ENTRYPOINT和CMD的区别.md#CMD为ENTRYPOINT定义默认参数)
+        ```bash
+        CMD ["param1","param2"]
+        ```
+    * shell form
+        ```bash
+        CMD command param1 param2
+        ```
+        * 执行的命令：`/bin/sh -c "command param1 param2"`
+        * 执行的程序为/bin/sh的子进程，PID不是1。会有类似 ENTRYPOINT shell格式的问题
+        
+* 当docker run容器指定了额外的参数时，`CMD`定义的命令将会被覆盖。**上面三种格式都一样**。    
+    `docker run <image>  param1 param2`相当于，新建 `CMD [param1, param2]`，覆盖原来的CMD
+
+* 示例
+    ```text
+    FROM debian:buster-slim
+        
+    CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
+    ```
+    ```text
+    FROM ubuntu
+    CMD ["/usr/bin/wc","--help"]
+    ```
+
 #### ENTRYPOINT
 设置容器启动时要运行的主命令(main command)
 
 ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程序及参数
+
+只需要一个`ENTRYPOINT`，如果有写多个`ENTRYPOINT`，只有最后一个`ENTRYPOINT`生效，所以建议只写一个
+
+* syntax（有两种格式）
+
+    * exec form，首选格式
+        ```bash
+        ENTRYPOINT ["executable", "param1", "param2"]
+        ```
+        * 执行的命令：`executable param1 param1`
+        * 会追加`CMD` 或`docker run <image> param ...`的参数，到`ENTRYPOINT []`的最后面
+        * 启动容器后传递参数的情况`docker run <image> param1 param2 param3`  
+            建新建一个`CMD [param1, param2, param3]`, 覆盖原来定义的CMD，  
+            再讲新的CMD参数追加到`ENTRYPOINT`的命令后面
+        * 启动的程序进程ID为1，PID 1
+        * []JSON数组里的元素必须以双引`"`号包裹，不能是单引号`'`
+        * 不能引用环境变量
+            
+            不可用示例
+            ```text
+            ENTRYPOINT [ "echo", "$HOME" ]
+            ```
+            如果非要使用环境变量，可以这么干
+            ```text
+            ENTRYPOINT [ "sh", "-c", "echo $HOME" ]
+            ```
+        * 当docker run容器指定了额外的参数时，`CMD`定义的命令将会被覆盖。  
+              `docker run <image>  param1 param2`相当于，新建 `CMD [param1, param2]`，覆盖原来的CMD
+    
+    * shell form
+        ```bash
+        ENTRYPOINT command param1 param2
+        ```
+        * 执行的命令：`/bin/sh -c "command param1 param2"`，执行的程序是一个/bin/sh的子进程
+        * **不接收`CMD` 或`docker run <image> param ...`的参数** 
+        * 启动的程序**进程ID不是1**  
+            如果非要把启动程序的PID弄为1(主进程)，可以这么干，在原来的命令前加 exec，表示使用可执行程序来运行
+            ```bash
+            FROM ubuntu
+            ENTRYPOINT exec command param1 param2
+            ```
+        * Docker daemon与容器之间不能传递Unix signals，所以执行像`docker stop <container>`时，容器中的程序不能接受到`SIGTERM`，会出现超时（默认10s），最后容器被强制kill
+
+* 启动容器时覆盖镜像中默认的 ENTRYPOINT
+    ```bash
+    docker run --entrypoint 可执行的二进制程序
+    
+    # 下列的情况将不生效
+        docker run --entrypoint sh -c "..."
+        docker run --entrypoint /bin/sh -c "..."
+    ```
 
 #### EXPOSE
 #### STOPSIGNAL
@@ -321,3 +424,26 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
 * 只做复制的情况下，建议使用COPY，因为直接透明
 * 如果需要把宿主机本地的tar压缩文件提取到镜像中，或下载URL资源到镜像中装饰使用ADD
 
+#### CMD与ENTRYPOINT的交互
+CMD和ENTRYPOINT都能定义容器启动时要执行的命令。
+
+**CMD与ENTRYPOINT组合使用的规则**
+1. Dockerfile中至少要指定一个`CMD`或`ENTRYPOINT`命令
+2. 把容器当可执行文件用，使用`ENTRYPOINT`
+3. `CMD`用于给`ENTRYPOINT`命令定义默认参数，当docker run有传递参数时，该默认参数会报覆盖
+4. `CMD`用于在容器中执行特殊的命令
+5. 当docker run容器指定了额外的参数时，`CMD`定义的命令将会被覆盖。  
+    `docker run <image>  param1 param2`相当于，新建 `CMD [param1, param2]`，覆盖原来的CMD
+
+
+##### ENTRYPOINT与CMD组合使用的不同情况
+* 其中`CMD`和`ENTRYPOINT`指令不区分先后顺序，哪个在前都一样
+
+\# |No ENTRYPOINT |ENTRYPOINT exec_entry p1_entry |ENTRYPOINT ["exec_entry", "p1_entry"]
+:--- |:--- |:--- |:--- 
+No CMD |error, not allowed |/bin/sh -c exec_entry p1_entry |exec_entry p1_entry  
+CMD ["exec_cmd", "p1_cmd"] |exec_cmd p1_cmd |/bin/sh -c exec_entry p1_entry |exec_entry p1_entry exec_cmd p1_cmd <br>不建议，一般运行不通  
+CMD ["p1_cmd", "p2_cmd"] |p1_cmd p2_cmd |/bin/sh -c exec_entry p1_entry |exec_entry p1_entry p1_cmd p2_cmd
+CMD exec_cmd p1_cmd |/bin/sh -c exec_cmd p1_cmd |/bin/sh -c exec_entry p1_entry |exec_entry p1_entry /bin/sh -c exec_cmd p1_cmd <br>不建议，一般运行不通  
+
+* 如果在基础镜像(BASIC IMAGE)中定义了`CMD`，`ENTRYPOINT`将重置`CMD`为空值，那么必须在当前的镜像中定义`CMD`的值
