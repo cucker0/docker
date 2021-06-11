@@ -1,7 +1,13 @@
 Dockerfile中ENTRYPOINT和CMD的区别
 ==
 
+
 ## 示例
+* 测试环境
+    ```text
+    OS：CentOS Linux release 7.9.2009 (Core)
+    Docker: docker-ce-20.10.6-3.el7.x86_64
+    ```
 
 ### ENTRYPOINT []
 exec form

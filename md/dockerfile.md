@@ -51,8 +51,8 @@ CMD ["/bin/bash"]
     ```
 3. docker run
 
-### Dockerfile构建过程分析
-#### Dockerfile基础知识
+## Dockerfile构建过程分析
+### Dockerfile基础知识
 * Dockerfile指令必须大写，每个指令后需要至少有一个参数
 * 指令按照Dockerfilew文件，从上到下，顺序执行
 * 行注释符：`#`
@@ -65,7 +65,7 @@ CMD ["/bin/bash"]
     ```
 * 每条指令都会创建一个新的镜像层，并对新的镜像进行提交
 
-#### 构建流程
+### 构建流程
 1. docker daemon读取Dockerfile文件，从上往下顺序执行
 2. docker daemon从基础镜像(basic image)运行一个容器
 3. 执行一条指令并对容器做出修改
@@ -73,8 +73,8 @@ CMD ["/bin/bash"]
 5. docker daemon在基于上面提交的新镜像运行一个容器
 6. 然后再执行Dockerfile文件中的下一条指令。依此执行下去，直到所有指令都执行完成
 
-### Dockerfile指令关键字
-#### ARG    
+## Dockerfile指令关键字
+### ARG    
 ```text
 定义变量，用于用户执行docker build命令时，把变量传递给Dockerfile引用。
 
@@ -95,7 +95,7 @@ CMD ["/bin/bash"]
     docker build -f Dockerfile_PATH --build-arg <varname1>=<value1> --build-arg <varname2>=<value2> PATH
     ```
     
-#### FROM
+### FROM
 ```text
 初始化新的构建阶段(build stage)，并设置基础镜像(Base Image)
 
@@ -133,7 +133,7 @@ FROM之后的指令引用
     
 * [多FROM的用法](Dockerfile多FROM指令存在的意义.md)
  
-#### MAINTAINER (deprecated)
+### MAINTAINER (deprecated)
 ```text
 设置维护作者信息，如姓名、email等
 
@@ -154,7 +154,7 @@ FROM之后的指令引用
     LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
     ```
 
-#### ENV
+### ENV
 ```text
 设置环境变量，可在构建阶段中使用已设置的变量。
 
@@ -172,16 +172,19 @@ FROM之后的指令引用
     ENV MY_CAT=fluffy
     ```
     
-#### WORKDIR
+### WORKDIR
 ```text
 为Dockerfile中的RUN, CMD, ENTRYPOINT, COPY, ADD指令设置"工作目录"
 
-可写多个
+可写多个，最终合并成一个，建议只写一个
 ```
 * syntax
     ```text
     WORKDIR /path/to/workdir
     ```
+    * 如果指定的工作目录不存在(容器中)，则自动创建
+    * `docker run -w "工作目录路径"`将覆盖Dockerfile中指定的`WORKDIR`
+    * `WORKDIR`可以引用ENV环境变量
 * 示例
     ```bash
     # 示例1
@@ -191,7 +194,7 @@ FROM之后的指令引用
     ENV DIRPATH=/path
     WORKDIR $DIRPATH/service
     ```
-#### ADD
+### ADD
 将宿主机上的文件、目录、远端的URL资源复制到镜像中。
 
 有本地tar压缩文件提取到镜像，下载URL资源到镜像的功能
@@ -222,7 +225,7 @@ FROM之后的指令引用
     ```
 
 
-#### COPY
+### COPY
 从宿主上复制文件或目录到镜像中
 
 
@@ -246,7 +249,7 @@ FROM之后的指令引用
     COPY --chown=bin files* /somedir/
     ```
 
-#### LABEL
+### LABEL
 给镜像设置metadata元数据。
 
 可以添加维护作者信息、项目的组织信息、licensing许可信息、版本信息等
@@ -269,7 +272,7 @@ FROM之后的指令引用
           other="value3"
     ```  
 
-#### USER
+### USER
 镜像运行时使用的用户和组。
 
 为Dockerfile文件中的RUN, CMD, ENTRYPOINT指令指定运行的用户和组
@@ -289,7 +292,7 @@ FROM之后的指令引用
     USER postgres
     ```
 
-#### VOLUME
+### VOLUME
 创建容器数据卷。用于数持久化
 
 创建具体指定名称的挂载点，将其标识为用来保存来自宿主机或其他容器的数据卷
@@ -307,8 +310,8 @@ VOLUME ["/var/log", "/var/db"]
 VOLUME /var/log /var/db
 ```
 
-#### CMD
-设置容器启动时要运行的主命令(main command)
+### CMD
+设置容器启动时要运行的主命令(main command)，或为`ENTRYPOINT`定义默认的参数
 
 Dockerfile中只需要一个`CMD`，如果有写多个`CMD`，只有最后一个`CMD`生效，所以建议只写一个
 
@@ -360,7 +363,7 @@ Dockerfile中只需要一个`CMD`，如果有写多个`CMD`，只有最后一个
     CMD ["/usr/bin/wc","--help"]
     ```
 
-#### ENTRYPOINT
+### ENTRYPOINT
 设置容器启动时要运行的主命令(main command)
 
 ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程序及参数
@@ -416,10 +419,131 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
         docker run --entrypoint /bin/sh -c "..."
     ```
 
-#### EXPOSE
-#### STOPSIGNAL
-#### ONBUILD
+### EXPOSE
+**通知Docker daemon**：当前容器在运行时**监听**了指定的端口。还没有发布端口
 
+可写多个该指令，结果为并集
+
+也可以只写一个该指令，EXPOSE可以同时指定多个端口
+
+* syntax
+    ```bash
+    EXPOSE <port> [<port>/<protocol>...]
+    ```
+    * `<port>/<protocol>`，省略`/<protocol>`时，表示`TCP`
+* 示例
+    ```text
+    EXPOSE 80/tcp 443/tcp
+    EXPOSE 53/udp
+    ```    
+* 映射容器中的端口到宿主机，并对外发布
+    * 语法
+    
+        `-p`单个映射
+        ```bash
+        docker run -p [host_ip:]<host_port>:<container_port[/protocol]> ...
+        ```
+        * 省略`host_ip:`，表示映入主机的IP为`0.0.0.0`，即所有IP
+        * `/protocol`，可选项有：`/tcp`, `/udp`, `/sctp`，缺省时默认为`/tcp`
+        `-P`批量映射（主机随机大号端口）
+        ```bash
+        docker run -P <image>
+        ```
+        一次性自动映射容器中的端口到宿主机，并对外发布。映射的主机端口号是随机的（使用比较大的端口号）
+        
+    * 示例
+        ```bash
+        docker run -p 80:80 443:443/tcp 53:53/udp -d --name centos01 nginx:1.21.0
+        ```
+### ONBUILD
+给镜像添加一条触发指令，当该镜像作为基础镜像，其下游镜像(子镜像)在执行docker build时，此基础镜像就会执行已定义的触发指令。
+
+触发指令将在下游镜像build构建的上下文中执行，效果如同：在紧跟下游的Dockerfile`FROM`指之后插入了这条触发指令
+
+我们使用基础镜像时，`ONBUILD`不会生产任何作用，它只对基于它为基础镜像的下游镜像有作用。
+
+可写多个该指令
+
+* syntax
+    ```bash
+    ONBUILD <INSTRUCTION>
+    ```
+* 示例
+    ```text
+    ONBUILD ADD . /app/src
+    ONBUILD RUN /usr/local/bin/python-build --dir /app/src
+    ```
+    
+* 注意事项
+    * 不能使用链式的`ONBUILD`，即`ONBUILD ONBUILD`不支持
+    * `ONBUILD`无法触发`FROM`、`MAINTAINER`
+    * 在`ONBUILD`使用`ADD`、`COPY`时，就确保引用资源在宿主机上存在，否则build构建将失败
+
+### STOPSIGNAL
+定义执行`docker stop`发送给当前容器的stop-signal（停止信号）。
+
+以便容器在退出前，可以先做一些事情，实现容器的平滑退出。
+
+* syntax
+    ```text
+    STOPSIGNAL signal
+    ```
+    * signal可以是无符号的数字，该信号与kernel的syscall表的位置对应。如9，表示强制退出信号
+    * signal也可以是信号名，要求符合SIGNAME格式。如SIGKILL，即kill信号
+* 示例（[nginx Dockerfile](https://hub.docker.com/_/nginx)）
+    ```text
+    FROM debian:buster-slim
+    
+    LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
+    ...
+    ENTRYPOINT ["/docker-entrypoint.sh"]
+    
+    EXPOSE 80
+    
+    STOPSIGNAL SIGQUIT
+    
+    CMD ["nginx", "-g", "daemon off;"]
+    ```
+* 为什么要有STOPSIGNAL
+    ```text
+    主要的目的是为了让容器内的应用程序在接收到stop-signal(停止信号)之后可以先做一些事情，实现容器的平滑退出。
+    默认情况下，容器将在一段时间之后强制退出，会造成业务的强制中断，这个时间默认是10s  
+  
+    docker stop <container> 发送的默认stop-signal是SIGTERM，在docker stop的时候会给容器内PID为1的进程发送这个signal，
+    另外也可以通过create/run的参数--stop-signal可以设置自己需要的signal，效果与Dockerfile同定义STOPSIGNAL相同。
+    以上两种方式指定了 stop-signal后，执行 docker stop <container> 时就会发送指定的stop-signal停止信号
+    ```
+    
+### HEALTHCHECK
+容器健康检测。  
+通知Docker daemon：怎样检测当前容器是一直在工作的。
+
+例如：可以检测WEB服务器卡在无限一循环中，无法处理新的连接，但服务进程却一直运行
+
+* syntax
+
+    两种格式
+    * 通过运行容器内的命令来检测容器是否健康
+        ```bash
+        HEALTHCHECK [OPTIONS] CMD
+        ```
+        OPTIONS:
+        * `--interval=DURATION` (default: 30s)
+        * `--timeout=DURATION` (default: 30s)
+        * `--start-period=DURATION` (default: 0s)
+        * `--retries=N` (default: 3)
+    
+    * 禁止从基础镜像中继承任何的健康检测
+        ```bash
+        HEALTHCHECK NONE
+        ```
+* 示例
+    ```text
+    HEALTHCHECK --interval=5m --timeout=3s \
+      CMD curl -f http://localhost/ || exit 1
+    ```
+
+### 特别说明
 #### ADD or COPY
 * 只做复制的情况下，建议使用COPY，因为直接透明
 * 如果需要把宿主机本地的tar压缩文件提取到镜像中，或下载URL资源到镜像中装饰使用ADD
@@ -436,7 +560,7 @@ CMD和ENTRYPOINT都能定义容器启动时要执行的命令。
     `docker run <image>  param1 param2`相当于，新建 `CMD [param1, param2]`，覆盖原来的CMD
 
 
-##### ENTRYPOINT与CMD组合使用的不同情况
+#### ENTRYPOINT与CMD组合使用的不同情况
 * 其中`CMD`和`ENTRYPOINT`指令不区分先后顺序，哪个在前都一样
 
 \# |No ENTRYPOINT |ENTRYPOINT exec_entry p1_entry |ENTRYPOINT ["exec_entry", "p1_entry"]
