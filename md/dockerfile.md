@@ -543,6 +543,20 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
       CMD curl -f http://localhost/ || exit 1
     ```
 
+### SHELL
+为`shell form`格式的命令指定新的默认shell，会覆盖`shell form`命令原来默认的shell。
+
+`shell form`格式的指令主要有: `CMD command param1 param2`、`ENTRYPOINT command param1 param2`
+
+* Linux的`shell form`默认shell是`["/bin/sh", "-c"]`
+* Windows的`shell form`默认shell是`["cmd", "/S", "/C"]`
+
+* syntax
+    ```text
+    SHELL ["executable", "parameters"]
+    ```
+    
+
 ### 特别说明
 #### ADD or COPY
 * 只做复制的情况下，建议使用COPY，因为直接透明
