@@ -194,6 +194,21 @@ FROM之后的指令引用
     ENV DIRPATH=/path
     WORKDIR $DIRPATH/service
     ```
+### RUN
+
+* syntax
+    * shell form
+        ```text
+        RUN <command>
+        ```
+        the command is run in a shell, which by default is  
+        `/bin/sh -c` on Linux  
+        or `cmd /S /C` on Windows
+    * exec form
+        ```text
+        RUN ["executable", "param1", "param2"]
+        ```
+
 ### ADD
 将宿主机上的文件、目录、远端的URL资源复制到镜像中。
 
@@ -546,7 +561,9 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
 ### SHELL
 为`shell form`格式的命令指定新的默认shell，会覆盖`shell form`命令原来默认的shell。
 
-`shell form`格式的指令主要有: `CMD command param1 param2`、`ENTRYPOINT command param1 param2`
+`shell form`格式的指令主要有: `CMD command param1 param2`、`ENTRYPOINT command param1 param2`、`RUN <command>`
+
+SHELL指令可以出现多次。每一条SHELL指令都会覆盖所有以前的SHELL指令，并影响所有后续指令。
 
 * Linux的`shell form`默认shell是`["/bin/sh", "-c"]`
 * Windows的`shell form`默认shell是`["cmd", "/S", "/C"]`
@@ -555,6 +572,24 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
     ```text
     SHELL ["executable", "parameters"]
     ```
+* 示例
+```text
+FROM microsoft/windowsservercore
+
+# Executed as cmd /S /C echo default
+RUN echo default
+
+# Executed as cmd /S /C powershell -command Write-Host default
+RUN powershell -command Write-Host default
+
+# Executed as powershell -command Write-Host hello
+SHELL ["powershell", "-command"]
+RUN Write-Host hello
+
+# Executed as cmd /S /C echo hello
+SHELL ["cmd", "/S", "/C"]
+RUN echo hello
+```
     
 
 ### 特别说明
