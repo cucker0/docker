@@ -218,3 +218,18 @@ docker run不传参的情况下，容器启动后执行 `/usr/local/bin/docker-e
     ```
     ${BASH_SOURCE [0]}(或更简单地说,$BASH_SOURCE)包含所有调用方案中包含脚本的(潜在的相对)路径,特别是在脚本来源时,这对于$0不是真的.
     
+    * 示例
+    
+        my.sh
+        ```bash 
+        #!/bin/sh
+        
+        echo "$BASH_SOURCE"
+        ```
+        >bash /root/my.sh aa bb
+        
+        输出结果
+        ```text
+        /root/my.sh
+        
+        ```
