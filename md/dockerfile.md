@@ -195,6 +195,13 @@ FROM之后的指令引用
     WORKDIR $DIRPATH/service
     ```
 ### RUN
+镜像构建时需要运行的命令
+
+`RUN`指令将在当前镜像的最顶层(可写层)执行命令并提交结果。每执行一次`RUN`将生成一个镜像，该镜像将用于`Dockerfile`下一步的指令。
+
+分层运行指令并提交结果，类似于git的源码管理。
+
+可写多个该指令
 
 * syntax
     * shell form
@@ -204,9 +211,32 @@ FROM之后的指令引用
         the command is run in a shell, which by default is  
         `/bin/sh -c` on Linux  
         or `cmd /S /C` on Windows
+        
+        * 可以使用`SHELL`指令修改exec from格式的默认shell
     * exec form
         ```text
         RUN ["executable", "param1", "param2"]
+        ```
+        * executable写绝对路径。不能使用env环境变量
+        * 尽量避免使用 `/bin/sh -c ''`这种shell壳来执行命令。
+        * executable一般为二进制可执行文件，尽量不写shell脚本
+        * JSON数组的元素必须使用`"`双引号包裹
+
+* 示例
+    ```bash
+    RUN yum -y install nginx
+    RUN groupadd -r mysql && useradd -r -g mysql mysql
+    ```
+* 注意事项
+    * `RUN`指令会产生的缓存，缓存不会自动清除，即docker build时会使用到`RUN`产生的缓存
+        ```bash
+        RUN yum -y install redis
+        ```
+        会下载redis安装包并缓存
+        
+    * docker build时不使用缓存
+        ```text
+        docker build --no-cache
         ```
 
 ### ADD
@@ -561,7 +591,10 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
 ### SHELL
 为`shell form`格式的命令指定新的默认shell，会覆盖`shell form`命令原来默认的shell。
 
-`shell form`格式的指令主要有: `CMD command param1 param2`、`ENTRYPOINT command param1 param2`、`RUN <command>`
+`shell form`格式的指令主要有:   
+    `CMD command param1 param2`、  
+    `ENTRYPOINT command param1 param2`、  
+    `RUN <command>`
 
 SHELL指令可以出现多次。每一条SHELL指令都会覆盖所有以前的SHELL指令，并影响所有后续指令。
 
