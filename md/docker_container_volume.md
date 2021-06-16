@@ -122,7 +122,8 @@ docker run -v /宿主机目录绝对路径:/容器目录路径[:rw/ro] IMAGE
         当run容器没有-v指定映射数据卷时，会自动绑定到挂载点 /var/lib/docker/volumes/<VOLUME_ID>/_data
         
     * Docker挂载主机目录Docker访问出现cannot open directory .: Permission denied
-        >解决办法：在挂载目录后多加一个 --privileged=true 参数即可
+        >解决办法：开启特权模式  
+        在挂载目录后多加一个 --privileged=true 参数即可
         
     * run -v挂载volume示例
         ```bash

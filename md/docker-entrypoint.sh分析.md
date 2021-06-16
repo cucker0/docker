@@ -22,7 +22,7 @@ CMD ["mysqld"]
 docker run不传参的情况下，容器启动后执行 `/usr/local/bin/docker-entrypoint.sh mysqld`
 
 
-## docker-entrypoint.sh具体内容
+## docker-entrypoint.sh具体内容分析
 [docker-entrypoint.sh for MySql 8](docker-entrypoint.sh)  
 [docker-entrypoint.sh for MySql 8 in github](https://github.com/docker-library/mysql/blob/master/8.0/docker-entrypoint.sh)
 
@@ -231,5 +231,4 @@ docker run不传参的情况下，容器启动后执行 `/usr/local/bin/docker-e
         输出结果
         ```text
         /root/my.sh
-        
         ```

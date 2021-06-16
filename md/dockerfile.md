@@ -173,11 +173,20 @@ FROM之后的指令引用
     ```
     
 ### WORKDIR
-```text
-为Dockerfile中的RUN, CMD, ENTRYPOINT, COPY, ADD指令设置"工作目录"
+为Dockerfile中的`RUN`, `CMD`, `ENTRYPOINT`, `COPY`, `ADD`指令设置"工作目录"
 
-可写多个，最终合并成一个，建议只写一个
-```
+可写多个，建议只写一个。
+
+多个WORKDIR相对路径将最终合并成一个.
+
+多个WORKDIR绝对路径的，只有最后一个生效。
+
+基础镜像中的`WORKDIR`值 不会被子镜像继承。
+
+**一个镜像中，`WORKDIR`缺省的默认值为`/`**
+
+[参考官网](https://docs.docker.com/engine/reference/run/#workdir)
+
 * syntax
     ```text
     WORKDIR /path/to/workdir
@@ -501,13 +510,25 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
         docker run -p 80:80 443:443/tcp 53:53/udp -d --name centos01 nginx:1.21.0
         ```
 ### ONBUILD
-给镜像添加一条触发指令，当该镜像作为基础镜像，其下游镜像(后代镜像)在执行docker build时，此基础镜像就会执行已定义的触发指令。
+给镜像添加一条触发指令，当该镜像作为基础镜像（父镜像），其下游镜像(子镜像)在执行docker build时，此基础镜像就会执行已定义的触发指令。
+孙及更小的后代docker build时不会在执行其原始祖先的ONBUILD指令。  
+因为原始祖先的ONBUILD指令已经在原始祖先的子镜像中执行了，执行的结果已经被继承下来了。
 
 触发指令将在下游镜像build构建的上下文中执行，效果如同：在紧跟下游的Dockerfile`FROM`指之后插入了这条触发指令
 
-我们使用基础镜像(即这个Dockerfile中含ONBUILD指令的镜像)时，`ONBUILD`不会生产任何作用，它只对基于它为基础镜像的下游镜像有作用。
+我们使用父镜像(即这个Dockerfile中含ONBUILD指令的镜像)时，`ONBUILD`不会生产任何作用，它只对基于它为基础镜像的下游镜像有作用。
 
 可写多个该指令
+
+使用场景
+```text
+在实际工作中，利用ONBUILD指令,通常用于创建一个模板镜像，
+后续可以根据该模板镜像创建特定的子镜像，
+需要在子镜像构建过程中执行的一些通用操作
+就可以在模板镜像对应的dockerfile文件中用ONBUILD指令指定。 
+
+从而减少dockerfile文件的重复内容编写。
+```
 
 * syntax
     ```bash
@@ -523,6 +544,8 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
     * 不能使用链式的`ONBUILD`，即`ONBUILD ONBUILD`不支持
     * `ONBUILD`无法触发`FROM`、`MAINTAINER`
     * 在`ONBUILD`使用`ADD`、`COPY`时，就确保引用资源在宿主机上存在，否则build构建将失败
+
+* [ONBUILD实验测试](ONBUILD_test.md)
 
 ### STOPSIGNAL
 定义执行`docker stop`发送给当前容器的stop-signal（停止信号）。

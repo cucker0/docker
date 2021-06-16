@@ -18,6 +18,8 @@ docker的使用
     ```
     
     * docker容器类似一个极简版的mini Linux系统
+    * docker的运行机制，一个docker容器同时只能管理一个进程，这个进程退出后，容器也就退出了。  
+        也就是至少有一个前台方式运行的进程才能使容器保持运行。
 
 * 官网资料
     * [docker官网](https://www.docker.com/)
@@ -643,7 +645,7 @@ By default, the container will be able to read`, `write` and `mknod` these devic
 
 This can be overridden using a third :`rwm` set of options to each `--device` flag. 
 
-If the container is running in `privileged` mode(witht the `--privileged` flag), then the permissions specified will be ignored.
+If the container is running in `privileged` mode（特权模式）(witht the `--privileged` flag), then the permissions specified will be ignored.
 
 ```bash
 $ docker run --device=/dev/sda:/dev/xvdc --rm -it ubuntu fdisk  /dev/xvdc
