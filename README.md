@@ -95,8 +95,8 @@ docker的使用
 * [记一次docker build镜像过程](md/record_4_docker-build.md)
 </details
 
-* 推送本地镜像到远程仓库(Repository)
-    * [推送本地镜像到dockerhub](md/将docker本地镜像推送到hub.docker.com.md)
+* 推送本地镜像到远端仓库(Repository)
+    * [推送本地镜像到docker hub](md/将docker本地镜像推送到hub.docker.com.md)
     * [将本地镜像推送到阿里云](md/将本地镜像推送到阿里云.md)
 
 <details>
@@ -130,6 +130,6 @@ docker的使用
 * [Dockerfile多FROM指令存在的意义 和 用法](md/Dockerfile多FROM指令存在的意义.md)
 * [docker-entrypoint.sh分析](md/docker-entrypoint.sh分析.md)
 * [在一个docker容器中运行多个程序进程的Dockerfile编写](md/在一个docker容器中运行多个程序进程的Dockerfile编写.md)
-* [推送本地镜像到dockerhub](md/将docker本地镜像推送到hub.docker.com.md)
+* [推送本地镜像到docker hub](md/将docker本地镜像推送到hub.docker.com.md)
 * [将本地镜像推送到阿里云](md/将本地镜像推送到阿里云.md)
 * [Dockerfile中ENTRYPOINT和CMD的区别](md/Dockerfile中ENTRYPOINT和CMD的区别.md)
