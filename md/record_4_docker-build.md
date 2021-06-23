@@ -18,9 +18,9 @@
     Step 1/7 : FROM centos
      ---> 300e315adb2f
     Step 2/7 : LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
-     ---> Running in 7cdd3908e00a
-    Removing intermediate container 7cdd3908e00a
-     ---> 8bbd34571cf3
+     ---> Running in 7cdd3908e00a  // 以上面的镜像运行临时容器，容器ID为7cdd3908e00a
+    Removing intermediate container 7cdd3908e00a  // 删除容器7cdd3908e00a
+     ---> 8bbd34571cf3  // docker commit，创建镜像，ID为8bbd34571cf3
     Step 3/7 : RUN yum install -y nginx
      ---> Running in d754a80bf324
     CentOS Linux 8 - AppStream                      6.9 MB/s | 7.4 MB     00:01    
