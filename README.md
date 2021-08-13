@@ -37,7 +37,7 @@ docker的使用
         * [修改Docker容器启动配置参数](md/docker.md#修改Docker容器启动配置参数)
         * [修改docker容器的挂载路径](md/docker.md#修改docker容器的挂载路径)
         * [修改docker默认的存储位置](md/docker.md#修改docker默认的存储位置)
-</details
+</details>
 
 <details>
 <summary>docker image镜像</summary>
@@ -50,7 +50,7 @@ docker的使用
     * [创建镜像](md/docker_image.md#创建镜像)
         * [docker commit](md/docker_image.md#docker-commit)
         * [由Dockerfile文件docker build镜像](md/docker_image.md#由Dockerfile文件docker-build镜像)
-</details
+</details>
 
 <details>
 <summary>docker容器数据卷</summary>
@@ -60,7 +60,7 @@ docker的使用
     * [命令添加](md/docker_container_volume.md#命令添加)
     * [Dockerfile添加](md/docker_container_volume.md#Dockerfile添加)
 * [--volumes-from挂载指定容器的数据卷](md/docker_container_volume.md#--volumes-from挂载指定容器的数据卷)
-</details
+</details>
 
 <details>
 <summary>Dockerfile</summary>
@@ -95,7 +95,7 @@ docker的使用
         * [ENTRYPOINT与CMD组合使用的不同情况](md/dockerfile.md#ENTRYPOINT与CMD组合使用的不同情况)
 * [自定义镜像](md/dockerfile.md#自定义镜像)
 * [记一次docker build镜像过程](md/record_4_docker-build.md)
-</details
+</details>
 
 * 推送本地镜像到远端仓库(Repository)
     * [推送本地镜像到docker hub](md/将docker本地镜像推送到hub.docker.com.md)
@@ -111,7 +111,7 @@ docker的使用
 * [docker-compose CLI命令](#docker-compose-CLI命令)
 * [compose file的编写](#compose-file的编写)
 * [compose演示示例](#compose演示示例)
-</details
+</details>
 
 <details>
 <summary>docker高级操作</summary>
