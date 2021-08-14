@@ -422,6 +422,9 @@ docker的使用
 * 删除所有的image
     ```bash
     docker rmi -f `docker images -qa`
+   
+    或
+    docker rmi -f `docker images --format "{{.ID}}"`
     ```
 
 ### 容器操作
@@ -449,7 +452,8 @@ docker的使用
     >docker kill [OPTIONS] CONTAINER [CONTAINER...]  
     docker kill CONTAINER_ID
 
-* 查看所有的容器，包括停止运行的
+* 查看
+   的容器，包括停止运行的
     >docker ps -a  
 
 * 启动容器
