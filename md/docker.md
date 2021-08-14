@@ -464,6 +464,9 @@ docker的使用
     >docker rm [OPTIONS] CONTAINER [CONTAINER...]  
     docker rm CONTAINER_ID
 
+* 删除所有的容器
+   >docker rm -fv `docker ps -a --format "{{.ID}}"`
+   
 * 向运行的指定容器中执行命令
     >docker exec -it CONTAINER_ID bash  
     // This will create a new Bash session in the container CONTAINER_ID 新建一个bash会话，此时就能在此session中输入命令
