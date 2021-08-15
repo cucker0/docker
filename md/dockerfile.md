@@ -106,6 +106,12 @@ CMD ["/bin/bash"]
 6. 然后再执行Dockerfile文件中的下一条指令。依此执行下去，直到所有指令都执行完成
 
 ## Dockerfile指令关键字
+### 注释符
+与shell、python注释符相同
+```text
+# 
+```
+
 ### ARG    
 ```text
 定义变量，用于用户执行docker build命令时，把变量传递给Dockerfile引用。
@@ -205,7 +211,7 @@ FROM之后的指令引用
     ```
     
 ### WORKDIR
-为Dockerfile中的`RUN`, `CMD`, `ENTRYPOINT`, `COPY`, `ADD`指令设置"工作目录"
+为Dockerfile中的`RUN`, `CMD`, `ENTRYPOINT`, `COPY`, `ADD`指令设置的"工作目录"
 
 可写多个，建议只写一个。
 
@@ -292,12 +298,16 @@ FROM之后的指令引用
     # 路径中有空格的解决方法
     ADD [--chown=<user>:<group>] ["<src>",... "<dest>"]
     ```
-    * <src>必须位置build的上下文目录内。不能超出此路径范围
+    * <src>必须位于build的上下文目录内(build context)。不能超出此路径范围
     * 当<src>为目录时，则复制目录下的全部内容，包括文件系统元数据。
-    * 如果 <src> 资源为宿主机本地的tar压缩包文件（.gzip, bzip2, xz），在镜像中将解压为目录，行为类似于 tar -x  
+    * 如果 <src> 资源为宿主机本地的tar压缩包文件（.gz, .gzip, .bzip2, .xz等），在镜像中将解压到<dest>目录，行为类似于 tar -x XX.tar.gz -C <dest> 
         即**将本地的tar文件提取到镜像中**
     * 如果 <src> 资源为URL资源时，在镜像中将不解压，直接下载
     * 当<src>为其它任何类型的文件，且<dest>以/结尾，则镜像中<src>将复制为<dest>/base(<src>)
+        示例：
+        >ADD ./app/start.sh /data/
+        
+        则 `start.sh` 将复制到镜像的 `/data/app/start.sh`
     * 当有多个<src>时，<dest>必须以/结尾
     * --chown=<user 只对linux系统有效
     * 当<dest>目录不存在时，将会自动创建该目录
@@ -389,19 +399,19 @@ FROM之后的指令引用
     ```
     值可以是一个json数组 或是多个参数的字符串（空格隔开）
 * 示例
-```bash
-VOLUME ["/var/log", "/var/db"]
-
-# 或
-VOLUME /var/log /var/db
-```
+    ```bash
+    VOLUME ["/var/log", "/var/db"]
+    
+    # 或
+    VOLUME /var/log /var/db
+    ```
 
 ### CMD
 设置容器启动时要运行的主命令(main command)，或为`ENTRYPOINT`定义默认的参数
 
 Dockerfile中只需要一个`CMD`，如果有写多个`CMD`，只有最后一个`CMD`生效，所以建议只写一个
 
-`CMD`在镜像构建阶段中不会中任何事情。
+`CMD`在镜像构建阶段中不会做任何事情。
 
 而`RUN`是会执行的命令，并会提交结果
 
@@ -695,7 +705,8 @@ CMD和ENTRYPOINT都能定义容器启动时要执行的命令。
 **CMD与ENTRYPOINT组合使用的规则**
 1. Dockerfile中至少要指定一个`CMD`或`ENTRYPOINT`命令
 2. 把容器当可执行文件用，使用`ENTRYPOINT`
-3. `CMD`用于给`ENTRYPOINT`命令定义默认参数，当docker run有传递参数时，该默认参数会报覆盖
+3. `CMD`用于给`ENTRYPOINT`命令定义默认参数，当docker run有传递参数时，该默认参数会报覆盖。  
+    且`ENTRYPOINT`只能用 exec form写法
 4. `CMD`用于在容器中执行特殊的命令
 5. 当docker run容器指定了额外的参数时，`CMD`定义的命令将会被覆盖。  
     `docker run <image>  param1 param2`相当于，新建 `CMD [param1, param2]`，覆盖原来的CMD
@@ -711,9 +722,22 @@ CMD ["exec_cmd", "p1_cmd"] |exec_cmd p1_cmd |/bin/sh -c exec_entry p1_entry |exe
 CMD ["p1_cmd", "p2_cmd"] |p1_cmd p2_cmd |/bin/sh -c exec_entry p1_entry |exec_entry p1_entry p1_cmd p2_cmd
 CMD exec_cmd p1_cmd |/bin/sh -c exec_cmd p1_cmd |/bin/sh -c exec_entry p1_entry |exec_entry p1_entry /bin/sh -c exec_cmd p1_cmd <br>不建议，一般运行不通  
 
+* ENTRYPOINT 看上去与 CMD 很像，它们都可以指定要执行的命令及其参数。不同的地方在于 ENTRYPOINT 不会被忽略，一定会被执行，即使运行 docker run 时指定了其他命令。
+
+* `ENTRYPOINT exec_entry p1_entry` shell格式写法，直接忽略`CMD参数`和`docker run <image> 参数`
+
 * 如果在基础镜像(BASIC IMAGE)中定义了`CMD`，`ENTRYPOINT`将重置`CMD`为空值，那么必须在当前的镜像中定义`CMD`的值
 
 * [Dockerfile中ENTRYPOINT和CMD的区别](Dockerfile中ENTRYPOINT和CMD的区别.md)
 
 ## 自定义镜像
 * [自定义镜像--tomcat](custom_image.md)
+
+## Dockerfile最佳实践
+* 使用`RUN`指令安装应用和软件，构建镜像
+* 如果镜像的用途是运行应用程序或服务，如运行一个MySQL，  
+    应该优先使用`ENTRYPOINT`指令的exec格式写法。  
+    `CMD` 可为 `ENTRYPOINT` 提供额外的默认参数，
+    同时可利用 `docker run <image> 参数1 ...` 命令行替换默认参数。
+* 如果想为容器设置默认的启动命令，可使用`CMD`指令。  
+    用户可在`docker run <image> 参数1 ...`命令行中替换此默认命令
