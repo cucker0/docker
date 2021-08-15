@@ -171,7 +171,7 @@ docker的使用
     
 * Uninstall old versions
     ```bash
-     yum -y remove docker \
+    yum -y remove docker \
                 docker-client \
                 docker-client-latest \
                 docker-common \
@@ -179,6 +179,10 @@ docker的使用
                 docker-latest-logrotate \
                 docker-logrotate \
                 docker-engine
+     
+    ## CentOS 8内置了Podman 开源容器
+    yum remove -y podman  # 或 dnf remove -y podman
+    yum erase -y podman buildah
     ```
     The contents of `/var/lib/docker/`, including images, containers, volumes, and networks, are preserved(先保存). The Docker Engine package is now called `docker-ce`.
 
