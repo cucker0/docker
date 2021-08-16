@@ -447,6 +447,10 @@ docker的使用
     >docker run --name mytomcat --restart=always -d -p 8888:8080 tomcat
     
     http://host-ip:8888 浏览
+
+* 重命名容器
+    >docker rename CONTAINER NEW_NAME
+    
     
 * 停止运行中的容器
     >docker stop [OPTIONS] CONTAINER [CONTAINER...]  
@@ -456,8 +460,7 @@ docker的使用
     >docker kill [OPTIONS] CONTAINER [CONTAINER...]  
     docker kill CONTAINER_ID
 
-* 查看
-   的容器，包括停止运行的
+* 查看所有的容器，包括停止运行的
     >docker ps -a  
 
 * 启动容器
@@ -469,8 +472,11 @@ docker的使用
     docker rm CONTAINER_ID
 
 * 删除所有的容器
-   >docker rm -fv `docker ps -a --format "{{.ID}}"`
-   
+    >docker rm -fv `docker ps -a --format "{{.ID}}"`
+
+* 删除所有已经退出的容器
+    >docker rm -v $(docker ps -aq -f status=exited)
+
 * 向运行的指定容器中执行命令
     >docker exec -it CONTAINER_ID bash  
     // This will create a new Bash session in the container CONTAINER_ID 新建一个bash会话，此时就能在此session中输入命令
