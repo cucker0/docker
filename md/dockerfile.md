@@ -194,7 +194,7 @@ FROM之后的指令引用
 
 ### ENV
 ```text
-设置环境变量，可在构建阶段中使用已设置的变量。
+设置环境变量，可在构建阶段中使用已设置的变量，也可以在容器中使用。
 
 可写多个
 ```
@@ -204,6 +204,9 @@ FROM之后的指令引用
     ```
 * 示例
     ```bash
+    # 添加系统环境变量。相当于在 /etc/profile 添加 export PATH=$PATH:/usr/local/siege/bin。 当Dockerfile中写入/etc/profile，在容器中不生效
+    ENV PATH=$PATH:/usr/local/siege/bin
+    
     ENV MY_NAME="John Doe" MY_DOG=Rex\ The\ Dog \
         MY_CAT=fluffy
     ENV MY_NAME="John Doe"
