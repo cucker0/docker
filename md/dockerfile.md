@@ -194,7 +194,7 @@ FROM之后的指令引用
 
 ### ENV
 ```text
-设置环境变量，可在构建阶段中使用已设置的变量，也可以在容器中使用。
+设置环境变量，已设置的变量可在构建阶段中使用，也可以在容器中使用。
 
 可写多个
 ```
@@ -203,15 +203,20 @@ FROM之后的指令引用
     ENV <key>=<value> ...
     ```
 * 示例
-    ```bash
-    # 添加系统环境变量。相当于在 /etc/profile 添加 export PATH=$PATH:/usr/local/siege/bin。 当Dockerfile中写入/etc/profile，在容器中不生效
-    ENV PATH=$PATH:/usr/local/siege/bin
-    
+    ```bash    
     ENV MY_NAME="John Doe" MY_DOG=Rex\ The\ Dog \
         MY_CAT=fluffy
     ENV MY_NAME="John Doe"
     ENV MY_CAT=fluffy
     ```
+    
+    **添加系统环境变量**  
+    ```bash  
+    ENV PATH=$PATH:/usr/local/siege/bin
+    ```
+    相当于在 /etc/profile 添加 export PATH=$PATH:/usr/local/siege/bin  
+    但Dockerfile中`RUN echo export PATH=$PATH:/usr/local/siege/bin >> /root/.bash_profile`，在容器中不生效。需要在运行的容器中执行 `. /etc/profile` 
+    如果非要这么干，可以 `RUN echo export PATH=$PATH:/usr/local/siege/bin >> /root/.bash_profile`
     
 ### WORKDIR
 为Dockerfile中的`RUN`, `CMD`, `ENTRYPOINT`, `COPY`, `ADD`指令设置的"工作目录"
