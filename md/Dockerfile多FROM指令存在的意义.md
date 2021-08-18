@@ -103,7 +103,7 @@ Docker的各个层是有相关性的，在联合挂载的过程中，系统需�
     # 运行阶段
     FROM scratch
     
-    # 从编译阶段的中拷贝编译结果到当前镜像中
+    # 从编译阶段中拷贝编译结果到当前镜像中
     COPY --from=0 /build/server /
     
     ENTRYPOINT ["/server"]
