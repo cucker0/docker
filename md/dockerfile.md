@@ -137,6 +137,10 @@ CMD ["/bin/bash"]
 ```text
 初始化新的构建阶段(build stage)，并设置基础镜像(Base Image)
 
+FROM <base_image> 背后所做的操作就是：ADD base_image的/ /
+    也即使把基础镜像的 整个 RootFS 复制过来，
+    所有docker history查看镜像的最后一条都是 `/bin/sh -c #(nop) ADD file:xxx in /`
+
 Dockerfile必须以一个 FORM 指令开始，即一般以 FORM 为第一行。Docker 17.05即之后支持多FROM
 当然如有变量要传递，ARG可以在FROM之前。
 "FROM之前定义的ARG变量，只能FROM引用"，FROM之后的指令不要引用
