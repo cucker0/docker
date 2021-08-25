@@ -1384,13 +1384,13 @@ docker网络依赖iptables的nat转发，所以docker主机的iptables服务不�
     ```text
     ...
     stop() {
+        # save iptables config
+        save 
         local ret=0
     
         # Do not stop if iptables module is not loaded.
         [ ! -e "$PROC_IPTABLES_NAMES" ] && return 0
         
-        # save iptables config
-        save  
         ...
     }
 
