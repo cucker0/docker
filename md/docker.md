@@ -1380,7 +1380,7 @@ docker网络依赖iptables的nat转发，所以docker主机的iptables服务不�
     systemctl restart iptables
     ```
     优化，在执行systemctl stop iptables 时，自动保存配置
-    修改 /usr/libexec/iptables/iptables.init 的stop(),reload()方法，是其执行这些方法时，自动保存配置
+    修改 `/usr/libexec/iptables/iptables.init` 的`stop()`, `reload()`方法，是其执行这些方法时，自动保存配置
     ```text
     ...
     stop() {
