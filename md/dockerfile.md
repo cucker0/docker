@@ -357,8 +357,37 @@ FROM之后的指令引用
     COPY --chown=bin files* /somedir/
     ```
 
+#### COPY --from=
+从build阶段中复制文件到镜像中，  
+或从指定的镜像中复制文件到此镜像中(把外部的镜像作为一个"build stage")
+
+* 语法
+   ```dockerfile
+   COPY --from=<build_stage_name> <src> <dest>
    
+   # 或
+   COPY --from=<image> <src> <dest>
+   ```
    
+* 示例1
+   ```dockerfile
+   FROM golang:1.16 AS builder
+   WORKDIR /go/src/github.com/alexellis/href-counter/
+   RUN go get -d -v golang.org/x/net/html  
+   COPY app.go    ./
+   RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+
+   FROM alpine:latest  
+   RUN apk --no-cache add ca-certificates
+   WORKDIR /root/
+   COPY --from=builder /go/src/github.com/alexellis/href-counter/app ./
+   CMD ["./app"] 
+   ```
+   
+* 示例2
+   ```dockerfile
+   COPY --from=nginx:latest /etc/nginx/nginx.conf /nginx.conf
+   ```
 ### LABEL
 给镜像设置metadata元数据。
 
