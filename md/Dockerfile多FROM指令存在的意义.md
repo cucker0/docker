@@ -1,6 +1,7 @@
 Dockerfile多FROM指令存在的意义
 ==
 
+[参考官网multistage-build](https://docs.docker.com/develop/develop-images/multistage-build/)
 [参考 脉冲云--Dockerfile多阶段构建](https://maichong.io/help/docker/dockerfile-multi-stage.html)
 
 ## 多FROM什么时候出现的
