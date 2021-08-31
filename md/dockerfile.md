@@ -361,7 +361,9 @@ FROM之后的指令引用
 从build阶段中复制文件到镜像中，  
 或从指定的镜像中复制文件到此镜像中(把外部的镜像作为一个"build stage")
 
-* 语法
+[参考multistage-build](https://docs.docker.com/develop/develop-images/multistage-build/)
+   
+* syntax
    ```dockerfile
    COPY --from=<build_stage_name> <src> <dest>
    
