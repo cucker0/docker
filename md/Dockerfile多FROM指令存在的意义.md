@@ -143,6 +143,9 @@ Docker的各个层是有相关性的，在联合挂载的过程中，系统需�
     FROM ubuntu:16.04
     
     COPY --from=quay.io/coreos/etcd:v3.3.9 /usr/local/bin/etcd /usr/local/bin/
+    
+    # 复制整个目录
+    COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
     ```
     我们直接将etcd镜像中的程序拷贝到了我们的镜像中，  
     这样，在生成程序镜像时，就不需要源码编译etcd了，  
