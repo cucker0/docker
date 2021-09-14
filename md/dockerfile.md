@@ -330,6 +330,8 @@ FROM之后的指令引用
     ADD hom?.txt /mydir/
     ADD --chown=55:mygroup files* /somedir/
     ADD --chown=1 files* /somedir/
+    ADD ./glibc-2.28/libc.a ./glibc-2.28/libc_pci.a ./glibc-2.28/*.so /usr/lib/
+    ADD ["./glibc-2.28/libc.a", "./glibc-2.28/libc_pci.a", "/usr/lib/"]
     ```
 
 
@@ -355,6 +357,10 @@ FROM之后的指令引用
     COPY hom* /mydir/
     COPY --chown=55:mygroup files* /somedir/
     COPY --chown=bin files* /somedir/
+   
+    # 复制目录， 把 ./go 目录复制到镜像的 //usr/local/go/
+    COPY ./go /usr/local/go/
+    相当于 COPY ./go/* /usr/local/go/
     ```
 
 #### COPY --from=
@@ -364,32 +370,39 @@ FROM之后的指令引用
 [参考multistage-build](https://docs.docker.com/develop/develop-images/multistage-build/)
    
 * syntax
-   ```dockerfile
-   COPY --from=<build_stage_name> <src> <dest>
-   
-   # 或
-   COPY --from=<image> <src> <dest>
-   ```
+    ```dockerfile
+    COPY --from=<build_stage_name> <src> <dest>
+
+    # 或
+    COPY --from=<image> <src> <dest>
+    ```
    
 * 示例1
-   ```dockerfile
-   FROM golang:1.16 AS builder
-   WORKDIR /go/src/github.com/alexellis/href-counter/
-   RUN go get -d -v golang.org/x/net/html  
-   COPY app.go    ./
-   RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+    ```dockerfile
+    FROM golang:1.16 AS builder
+    WORKDIR /go/src/github.com/alexellis/href-counter/
+    RUN go get -d -v golang.org/x/net/html  
+    COPY app.go    ./
+    RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
 
-   FROM alpine:latest  
-   RUN apk --no-cache add ca-certificates
-   WORKDIR /root/
-   COPY --from=builder /go/src/github.com/alexellis/href-counter/app ./
-   CMD ["./app"] 
-   ```
+    FROM alpine:latest  
+    RUN apk --no-cache add ca-certificates
+    WORKDIR /root/
+    COPY --from=builder /go/src/github.com/alexellis/href-counter/app ./
+    CMD ["./app"] 
+    ```
    
 * 示例2
-   ```dockerfile
-   COPY --from=nginx:latest /etc/nginx/nginx.conf /nginx.conf
-   COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
+    ```dockerfile
+    COPY --from=nginx:latest /etc/nginx/nginx.conf /nginx.conf
+    COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
+    
+    # 复制多个文件
+    ENV glibc_dir=/usr/local/src/glibc-2.28
+    COPY --from=cucker/golang:1.17.1-glibc-static ${glibc_dir}/*.a \
+        ${glibc_dir}/nptl/libpthread.a \
+        ${glibc_dir}/dlfcn/libdl.a \
+        /usr/lib64/
    ```
 ### LABEL
 给镜像设置metadata元数据。
