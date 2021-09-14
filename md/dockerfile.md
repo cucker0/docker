@@ -389,6 +389,7 @@ FROM之后的指令引用
 * 示例2
    ```dockerfile
    COPY --from=nginx:latest /etc/nginx/nginx.conf /nginx.conf
+   COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
    ```
 ### LABEL
 给镜像设置metadata元数据。
