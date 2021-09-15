@@ -137,6 +137,10 @@ CMD ["/bin/bash"]
 ```text
 初始化新的构建阶段(build stage)，并设置基础镜像(Base Image)
 
+FROM <base_image> 背后所做的操作就是：ADD base_image的/ /
+    也即使把基础镜像的 整个 RootFS 复制过来，
+    所有docker history查看镜像的最后一条都是 `/bin/sh -c #(nop) ADD file:xxx in /`
+
 Dockerfile必须以一个 FORM 指令开始，即一般以 FORM 为第一行。Docker 17.05即之后支持多FROM
 当然如有变量要传递，ARG可以在FROM之前。
 "FROM之前定义的ARG变量，只能FROM引用"，FROM之后的指令不要引用
@@ -145,11 +149,11 @@ Dockerfile必须以一个 FORM 指令开始，即一般以 FORM 为第一行。D
 FROM之后的指令引用
 ```
 * syntax
-    ```text
+    ```dockerfile
     FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]
     ```
     或
-    ```text
+    ```dockerfile
     FROM [--platform=<platform>] <image>[@<digest>] [AS <name>]
     ```
     * 省略`:tag`，缺省为`latest`
@@ -158,7 +162,7 @@ FROM之后的指令引用
 * 示例
   
     示例1
-    ```bash
+    ```dockerfile
     
     ARG VERSION=latest
     FROM busybox:$VERSION
@@ -179,7 +183,7 @@ FROM之后的指令引用
 ```
 
 * syntax
-    ```text
+    ```dockerfile
     MAINTAINER <name>
     ```
 * 示例
@@ -199,11 +203,11 @@ FROM之后的指令引用
 可写多个
 ```
 * syntax
-    ```text
+    ```dockerfile
     ENV <key>=<value> ...
     ```
 * 示例
-    ```bash    
+    ```dockerfile    
     ENV MY_NAME="John Doe" MY_DOG=Rex\ The\ Dog \
         MY_CAT=fluffy
     ENV MY_NAME="John Doe"
@@ -211,7 +215,7 @@ FROM之后的指令引用
     ```
     
     **添加系统环境变量**  
-    ```bash  
+    ```dockerfile  
     ENV PATH=$PATH:/usr/local/siege/bin
     ```
     相当于在 /etc/profile 添加 export PATH=$PATH:/usr/local/siege/bin  
@@ -241,7 +245,7 @@ FROM之后的指令引用
     * `docker run -w "工作目录路径"`将覆盖Dockerfile中指定的`WORKDIR`
     * `WORKDIR`可以引用ENV环境变量
 * 示例
-    ```bash
+    ```dockerfile
     # 示例1
     WORKDIR /usr/local/service
     
@@ -260,7 +264,7 @@ FROM之后的指令引用
 
 * syntax
     * shell form
-        ```text
+        ```dockerfile
         RUN <command>
         ```
         the command is run in a shell, which by default is  
@@ -269,7 +273,7 @@ FROM之后的指令引用
         
         * 可以使用`SHELL`指令修改exec from格式的默认shell
     * exec form
-        ```text
+        ```dockerfile
         RUN ["executable", "param1", "param2"]
         ```
         * executable写绝对路径。不能使用env环境变量
@@ -278,13 +282,13 @@ FROM之后的指令引用
         * JSON数组的元素必须使用`"`双引号包裹
 
 * 示例
-    ```bash
+    ```dockerfile
     RUN yum -y install nginx
     RUN groupadd -r mysql && useradd -r -g mysql mysql
     ```
 * 注意事项
     * `RUN`指令会产生的缓存，缓存不会自动清除，即docker build时会使用到`RUN`产生的缓存
-        ```bash
+        ```dockerfile
         RUN yum -y install redis
         ```
         会下载redis安装包并缓存
@@ -300,7 +304,7 @@ FROM之后的指令引用
 有本地tar压缩文件提取到镜像，下载URL资源到镜像的功能
 
 * syntax
-    ```text
+    ```dockerfile
     ADD [--chown=<user>:<group>] <src>... <dest>
 
     # 路径中有空格的解决方法
@@ -320,12 +324,14 @@ FROM之后的指令引用
     * --chown=<user 只对linux系统有效
     * 当<dest>目录不存在时，将会自动创建该目录
 * 示例
-    ```bash
+    ```dockerfile
     ADD test.txt /absoluteDir/
     ADD hom* /mydir/
     ADD hom?.txt /mydir/
     ADD --chown=55:mygroup files* /somedir/
     ADD --chown=1 files* /somedir/
+    ADD ./glibc-2.28/libc.a ./glibc-2.28/libc_pci.a ./glibc-2.28/*.so /usr/lib/
+    ADD ["./glibc-2.28/libc.a", "./glibc-2.28/libc_pci.a", "/usr/lib/"]
     ```
 
 
@@ -334,25 +340,70 @@ FROM之后的指令引用
 
 
 * syntax
-    ```bash
+    ```dockerfile
     COPY [--chown=<user>:<group>] <src>... <dest>
     
     # 路径中有空格
     COPY [--chown=<user>:<group>] ["<src>",... "<dest>"]
     ```
-    * <src>必须位置build的上下文目录内。不能超出此路径范围
-    * 当<src>为目录时，则复制目录下的全部内容，包括文件系统元数据。
-    * 当<dest>目录不存在时，将会自动创建该目录
-    * <src>不支持URL
+    * \<src>必须位置build的上下文目录内。不能超出此路径范围
+    * 当\<src>为目录时，则复制目录下的全部内容，包括文件系统元数据。
+    * 当\<dest>目录不存在时，将会自动创建该目录
+    * \<src>不支持URL
    
 * 示例
-    ```bash
+    ```dockerfile
     COPY test.txt /absoluteDir/
     COPY hom* /mydir/
     COPY --chown=55:mygroup files* /somedir/
     COPY --chown=bin files* /somedir/
+   
+    # 复制目录， 把 ./go 目录复制到镜像的 //usr/local/go/
+    COPY ./go /usr/local/go/
+    相当于 COPY ./go/* /usr/local/go/
     ```
 
+#### COPY --from=
+从build阶段中复制文件到镜像中，  
+或从指定的镜像中复制文件到此镜像中(把外部的镜像作为一个"build stage")
+
+[参考multistage-build](https://docs.docker.com/develop/develop-images/multistage-build/)
+   
+* syntax
+    ```dockerfile
+    COPY --from=<build_stage_name> <src> <dest>
+
+    # 或
+    COPY --from=<image> <src> <dest>
+    ```
+   
+* 示例1
+    ```dockerfile
+    FROM golang:1.16 AS builder
+    WORKDIR /go/src/github.com/alexellis/href-counter/
+    RUN go get -d -v golang.org/x/net/html  
+    COPY app.go    ./
+    RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+
+    FROM alpine:latest  
+    RUN apk --no-cache add ca-certificates
+    WORKDIR /root/
+    COPY --from=builder /go/src/github.com/alexellis/href-counter/app ./
+    CMD ["./app"] 
+    ```
+   
+* 示例2
+    ```dockerfile
+    COPY --from=nginx:latest /etc/nginx/nginx.conf /nginx.conf
+    COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
+    
+    # 复制多个文件
+    ENV glibc_dir=/usr/local/src/glibc-2.28
+    COPY --from=cucker/golang:1.17.1-glibc-static ${glibc_dir}/*.a \
+        ${glibc_dir}/nptl/libpthread.a \
+        ${glibc_dir}/dlfcn/libdl.a \
+        /usr/lib64/
+   ```
 ### LABEL
 给镜像设置metadata元数据。
 
@@ -361,11 +412,11 @@ FROM之后的指令引用
 可写多个
 
 * syntax
-    ```bash
+    ```dockerfile
     LABEL <key>=<value> <key>=<value> <key>=<value> ...
     ```
 * 示例
-    ```bash
+    ```dockerfile
     LABEL maintainer="NGINX Docker Maintainers <docker-maint@nginx.com>"
     LABEL com.example.version="0.0.1-beta"
     LABEL vendor1="ACME Incorporated"
@@ -382,14 +433,14 @@ FROM之后的指令引用
 为Dockerfile文件中的RUN, CMD, ENTRYPOINT指令指定运行的用户和组
 
 * syntax
-    ```bash
+    ```dockerfile
     USER <user>[:<group>]
     
     # or
     USER <UID>[:<GID>]
     ```
 * 示例
-    ```bash
+    ```dockerfile
     # Create a group and an user
     RUN groupadd -r postgres && useradd --no-log-init -r -g postgres postgres
     # 为后续命令指定用户
@@ -402,7 +453,7 @@ FROM之后的指令引用
 创建具体指定名称的挂载点，将其标识为用来保存来自宿主机或其他容器的数据卷
 
 * syntax
-    ```bash
+    ```dockerfile
     VOLUME ["/data", "/data2"]
     ```
     值可以是一个json数组 或是多个参数的字符串（空格隔开）
@@ -425,7 +476,7 @@ Dockerfile中只需要一个`CMD`，如果有写多个`CMD`，只有最后一个
 
 * syntax（有三种格式）
     * exec form，首选格式
-        ```bash
+        ```dockerfile
         CMD ["executable","param1","param2"]
         ```
         * 执行的命令：`executable param1 param2`
@@ -435,19 +486,19 @@ Dockerfile中只需要一个`CMD`，如果有写多个`CMD`，只有最后一个
         * 不能引用环境变量
                     
             不可用示例
-            ```text
+            ```dockerfile
             CMD [ "echo", "$HOME" ]
             ```
             如果非要使用环境变量，可以这么干
-            ```text
+            ```dockerfile
             CMD [ "sh", "-c", "echo $HOME" ]
             ```
     * 作为`ENTRYPOINT []`的默认参数，这也是exec form。这也是CMD的主要用途。[参考 CMD为ENTRYPOINT定义默认参数](Dockerfile中ENTRYPOINT和CMD的区别.md#CMD为ENTRYPOINT定义默认参数)
-        ```bash
+        ```dockerfile
         CMD ["param1","param2"]
         ```
     * shell form
-        ```bash
+        ```dockerfile
         CMD command param1 param2
         ```
         * 执行的命令：`/bin/sh -c "command param1 param2"`
@@ -457,12 +508,12 @@ Dockerfile中只需要一个`CMD`，如果有写多个`CMD`，只有最后一个
     `docker run <image>  param1 param2`相当于，新建 `CMD [param1, param2]`，覆盖原来的CMD
 
 * 示例
-    ```text
+    ```dockerfile
     FROM debian:buster-slim
         
     CMD ["/usr/sbin/nginx", "-g", "daemon off;"]
     ```
-    ```text
+    ```dockerfile
     FROM ubuntu
     CMD ["/usr/bin/wc","--help"]
     ```
@@ -477,7 +528,7 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
 * syntax（有两种格式）
 
     * exec form，首选格式
-        ```bash
+        ```dockerfile
         ENTRYPOINT ["executable", "param1", "param2"]
         ```
         * 执行的命令：`executable param1 param1`
@@ -490,25 +541,25 @@ ENTRYPOINT 的目的和 CMD 一样，都是指定容器启动时要运行的程�
         * 不能引用环境变量
             
             不可用示例
-            ```text
+            ```dockerfile
             ENTRYPOINT [ "echo", "$HOME" ]
             ```
             如果非要使用环境变量，可以这么干
-            ```text
+            ```dockerfile
             ENTRYPOINT [ "sh", "-c", "echo $HOME" ]
             ```
         * 当docker run容器指定了额外的参数时，`CMD`定义的命令将会被覆盖。  
               `docker run <image>  param1 param2`相当于，新建 `CMD [param1, param2]`，覆盖原来的CMD
     
     * shell form
-        ```bash
+        ```dockerfile
         ENTRYPOINT command param1 param2
         ```
         * 执行的命令：`/bin/sh -c "command param1 param2"`，执行的程序是一个/bin/sh的子进程
         * **不接收`CMD` 或`docker run <image> param ...`的参数** 
         * 启动的程序**进程ID不是1**  
             如果非要把启动程序的PID弄为1(主进程)，可以这么干，在原来的命令前加 exec，表示使用可执行程序来运行
-            ```bash
+            ```dockerfile
             FROM ubuntu
             ENTRYPOINT exec command param1 param2
             ```
@@ -535,12 +586,12 @@ EXPOSE指定的端口与发布的端口没有直接的关系。docker run -p 本
 也可以只写一个该指令，EXPOSE可以同时指定多个端口
 
 * syntax
-    ```bash
+    ```dockerfile
     EXPOSE <port> [<port>/<protocol>...]
     ```
     * `<port>/<protocol>`，省略`/<protocol>`时，表示`TCP`
 * 示例
-    ```text
+    ```dockerfile
     EXPOSE 80/tcp 443/tcp
     EXPOSE 53/udp
     ```    
@@ -585,11 +636,11 @@ EXPOSE指定的端口与发布的端口没有直接的关系。docker run -p 本
 ```
 
 * syntax
-    ```bash
+    ```dockerfile
     ONBUILD <INSTRUCTION>
     ```
 * 示例
-    ```text
+    ```dockerfile
     ONBUILD ADD . /app/src
     ONBUILD RUN /usr/local/bin/python-build --dir /app/src
     ```
@@ -607,7 +658,7 @@ EXPOSE指定的端口与发布的端口没有直接的关系。docker run -p 本
 以便容器在退出前，可以先做一些事情，实现容器的平滑退出。
 
 * syntax
-    ```text
+    ```dockerfile
     STOPSIGNAL signal
     ```
     * signal可以是无符号的数字，该信号与kernel的syscall表的位置对应。如9，表示强制退出信号
@@ -646,7 +697,7 @@ EXPOSE指定的端口与发布的端口没有直接的关系。docker run -p 本
 
     两种格式
     * 通过运行容器内的命令来检测容器是否健康
-        ```bash
+        ```dockerfile
         HEALTHCHECK [OPTIONS] CMD
         ```
         OPTIONS:
@@ -656,11 +707,11 @@ EXPOSE指定的端口与发布的端口没有直接的关系。docker run -p 本
         * `--retries=N` (default: 3)
     
     * 禁止从基础镜像中继承任何的健康检测
-        ```bash
+        ```dockerfile
         HEALTHCHECK NONE
         ```
 * 示例
-    ```text
+    ```dockerfile
     HEALTHCHECK --interval=5m --timeout=3s \
       CMD curl -f http://localhost/ || exit 1
     ```
@@ -679,27 +730,27 @@ SHELL指令可以出现多次。每一条SHELL指令都会覆盖所有以前的S
 * Windows的`shell form`默认shell是`["cmd", "/S", "/C"]`
 
 * syntax
-    ```text
+    ```dockerfile
     SHELL ["executable", "parameters"]
     ```
 * 示例
-```text
-FROM microsoft/windowsservercore
+   ```dockerfile
+   FROM microsoft/windowsservercore
 
-# Executed as cmd /S /C echo default
-RUN echo default
+   # Executed as cmd /S /C echo default
+   RUN echo default
 
-# Executed as cmd /S /C powershell -command Write-Host default
-RUN powershell -command Write-Host default
+   # Executed as cmd /S /C powershell -command Write-Host default
+   RUN powershell -command Write-Host default
 
-# Executed as powershell -command Write-Host hello
-SHELL ["powershell", "-command"]
-RUN Write-Host hello
+   # Executed as powershell -command Write-Host hello
+   SHELL ["powershell", "-command"]
+   RUN Write-Host hello
 
-# Executed as cmd /S /C echo hello
-SHELL ["cmd", "/S", "/C"]
-RUN echo hello
-```
+   # Executed as cmd /S /C echo hello
+   SHELL ["cmd", "/S", "/C"]
+   RUN echo hello
+   ```
     
 
 ### 特别说明

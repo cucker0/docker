@@ -1,6 +1,7 @@
 Dockerfile多FROM指令存在的意义
 ==
 
+[参考官网multistage-build](https://docs.docker.com/develop/develop-images/multistage-build/)  
 [参考 脉冲云--Dockerfile多阶段构建](https://maichong.io/help/docker/dockerfile-multi-stage.html)
 
 ## 多FROM什么时候出现的
@@ -103,7 +104,7 @@ Docker的各个层是有相关性的，在联合挂载的过程中，系统需�
     # 运行阶段
     FROM scratch
     
-    # 从编译阶段的中拷贝编译结果到当前镜像中
+    # 从编译阶段中拷贝编译结果到当前镜像中
     COPY --from=0 /build/server /
     
     ENTRYPOINT ["/server"]
@@ -142,6 +143,9 @@ Docker的各个层是有相关性的，在联合挂载的过程中，系统需�
     FROM ubuntu:16.04
     
     COPY --from=quay.io/coreos/etcd:v3.3.9 /usr/local/bin/etcd /usr/local/bin/
+    
+    # 复制整个目录
+    COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
     ```
     我们直接将etcd镜像中的程序拷贝到了我们的镜像中，  
     这样，在生成程序镜像时，就不需要源码编译etcd了，  

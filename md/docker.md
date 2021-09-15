@@ -1371,7 +1371,7 @@ A tool for exploring a docker image, layer contents, and discovering ways to shr
         wagoodman/dive:latest mysql
     ```
 ## 注意
-### iptables服务重启后，导致docker的iptables规则丢失解决办法
+### iptables/firewall服务重启后，导致docker的iptables规则丢失解决办法
 docker网络依赖iptables的nat转发，所以docker主机的iptables服务不能停和随意改动配置
 
 * 方法1：重启ipables之前，先保存iptables配置。在执行重启iptables服务
@@ -1380,17 +1380,17 @@ docker网络依赖iptables的nat转发，所以docker主机的iptables服务不�
     systemctl restart iptables
     ```
     优化，在执行systemctl stop iptables 时，自动保存配置
-    修改 /usr/libexec/iptables/iptables.init 的stop(),reload()方法，是其执行这些方法时，自动保存配置
+    修改 `/usr/libexec/iptables/iptables.init` 的`stop()`, `reload()`方法，是其执行这些方法时，自动保存配置
     ```text
     ...
     stop() {
+        # save iptables config
+        save 
         local ret=0
     
         # Do not stop if iptables module is not loaded.
         [ ! -e "$PROC_IPTABLES_NAMES" ] && return 0
         
-        # save iptables config
-        save  
         ...
     }
 
