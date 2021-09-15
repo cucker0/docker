@@ -429,6 +429,9 @@ docker的使用
    
     或
     docker rmi -f `docker images --format "{{.ID}}"`
+    
+    删除所有 tag为none的镜像
+    docker rmi -f `docker images -f dangling=true -q`
     ```
 
 ### 容器操作
