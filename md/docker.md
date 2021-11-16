@@ -286,6 +286,8 @@ docker的使用
     sudo systemctl daemon-reload
     sudo systemctl restart docker
     ```
+    我的阿里云 docker镜像加速地址 `https://3bq1z3ee.mirror.aliyuncs.com`
+    
 * 网易docker镜像
     ```bash
     sudo mkdir -p /etc/docker
