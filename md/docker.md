@@ -760,7 +760,7 @@ always	|Always restart the container regardless of the exit status. When you spe
 * 方式1，退出tty并关闭容器
     >在容器中执行`exit`命令
 * 方式2，退出tty，容器在后台继续运行
-    >Ctrl + P + Q
+    > Ctrl + p 然后 Ctrl + q 组合键
 
 
 
