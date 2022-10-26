@@ -504,7 +504,9 @@ exec form
         [
             {
                 ...
+                // Path = .[0].Config.Entrypoint[0]
                 "Path": "/bin/sh",
+                // Args = .[0].Config.Entrypoint[1 : -1] + .[0].Config.Cmd
                 "Args": [
                     "-c",
                     "/usr/sbin/nginx -v",
