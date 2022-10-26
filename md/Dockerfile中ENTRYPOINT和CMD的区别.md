@@ -100,7 +100,7 @@ exec form
     
     * 结论
     
-        docker run 镜像后的参数，相当于新加了一条`CMD`指令（并会覆盖原来定义的CMD），最后这些参数追加到`ENTRYPOINT []`命令后面作为参数
+        docker run 镜像后的参数，相当于新加了一条`CMD`指令（并会覆盖 Dockerfile 中定义的CMD），最后这些参数追加到`ENTRYPOINT []`命令后面作为参数
 
 ### CMD []
 * Dockerfile
@@ -193,6 +193,104 @@ exec form
     ```
     ![](../image/image_test41.png)
     
+    * 查看 image 详细信息  
+        docker inspect hanxiao/mynginx:4.1
+        // 或
+        docker image inspect hanxiao/mynginx:4.1
+
+        ```json
+        [
+            {
+                ...
+                "RepoTags": [
+                    "hanxiao/mynginx:4.1"
+                ],
+                "Config": {
+                    ...
+                    "ExposedPorts": {
+                        "80/tcp": {}
+                    },
+                    "Env": [
+                        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                    ],
+                    "Cmd": [
+                        "-g",
+                        "daemon off;"
+                    ],
+                    "Volumes": null,
+                    "WorkingDir": "",
+                    "Entrypoint": [
+                        "/usr/sbin/nginx"
+                    ],
+
+                },
+                ...
+            }
+        ]
+        ```
+
+        * 查看 container 详细信息  
+            docker inspect mynginx4_1
+            ```json
+            [
+                {
+                    ...
+                    // Path 与 Args 即为容器最终启动时的命令
+                    "Path": "/usr/sbin/nginx",
+                    "Args": [
+                        "-g",
+                        "daemon off;"
+                    ],
+                    "HostConfig": {
+                        ...
+                        "PortBindings": {
+                            "80/tcp": [
+                                {
+                                    "HostIp": "",
+                                    "HostPort": "5040"
+                                }
+                            ]
+                        },
+                    },
+                    "Config": {
+                        ...
+                        "ExposedPorts": {
+                            "80/tcp": {}
+                        },
+                        "Env": [
+                            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                        ],
+                        "Cmd": [
+                            "-g",
+                            "daemon off;"
+                        ],
+                        "Image": "hanxiao/mynginx:4.1",
+                        "Volumes": null,
+                        "WorkingDir": "",
+                        "Entrypoint": [
+                            "/usr/sbin/nginx"
+                        ],
+                    },
+                    "NetworkSettings": {
+                        ...
+                        "Ports": {
+                            "80/tcp": [
+                                {
+                                    "HostIp": "0.0.0.0",
+                                    "HostPort": "5040"
+                                },
+                                {
+                                    "HostIp": "::",
+                                    "HostPort": "5040"
+                                }
+                            ]
+                        },
+                        ...
+                    }
+                }
+            ]
+            ```
+    
 * 其它测试
     * docker run时传参
         ```bash
@@ -203,8 +301,75 @@ exec form
             ```bash
             /usr/sbin/nginx -h
             ```
+    
+    * 查看 docker run 时传参分析
+        ```bash
+        docker run -d --name mynginx4_1_2 hanxiao/mynginx:4.1 -h
+        ```
+    
+        ```bash
+        ~]# docker logs mynginx4_1_2
+        nginx version: nginx/1.14.1
+        Usage: nginx [-?hvVtTq] [-s signal] [-c filename] [-p prefix] [-g directives]
+
+        Options:
+          -?,-h         : this help
+          -v            : show version and exit
+          -V            : show version and configure options then exit
+          -t            : test configuration and exit
+          -T            : test configuration, dump it and exit
+          -q            : suppress non-error messages during configuration testing
+          -s signal     : send signal to a master process: stop, quit, reopen, reload
+          -p prefix     : set prefix path (default: /usr/share/nginx/)
+          -c filename   : set configuration file (default: /etc/nginx/nginx.conf)
+          -g directives : set global directives out of configuration file
+        ```
+
+        docker inspect mynginx4_1_2
+        ```json
+        [
+            {
+                "Path": "/usr/sbin/nginx",
+                "Args": [
+                    "-h"
+                ],
+                
+                "Config": {
+                    ...
+                    "ExposedPorts": {
+                        "80/tcp": {}
+                    },
+                    "Env": [
+                        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                    ],
+                    "Cmd": [
+                        "-h"
+                    ],
+                    "Image": "hanxiao/mynginx:4.1",
+                    "Volumes": null,
+                    "WorkingDir": "",
+                    "Entrypoint": [
+                        "/usr/sbin/nginx"
+                    ],
+                    ...
+                },
+            }
+        ]
+        ```
+
+        可以发现，先把 images 的 `.[0].Config` 信息复制到容器的配置信息`.[0].Config`，再更新需要更新的 key 值，如 `.[0].Config.Cmd` 的key 值更新为 `["-h"]`
+
+        也就是 `docker run <image> 参数1 参数2 ...` 把参数解析为一个列表 ["参数1", "参数2", ...]，然后再更新 `.[0].Config.Cmd` = ["参数1", "参数2", ...]
+
+        `.[0].Path` 则是 `.[0].Config.Entrypoint[0]`，
+
+        `.[0].Args` 则是 `.[0].Config.Cmd`
+        
+    
 ### ENTRYPOINT shell格式
-结论：ENTRYPOINT shell格式，不接收`CMD`或`docker run`传递的参数
+结论：ENTRYPOINT shell格式，`CMD`或`docker run`传递的参数不生效。
+
+是通过 `/bin/sh -c '字符串' 参数1 参数2 ...` 只解析到'字符串'，'字符串'后的参数被忽略 实现的。
 
 * Dockerfile
 
@@ -222,6 +387,37 @@ exec form
     ```bash
     docker build -f /mydocker/Dockerfile4 -t hanxiao/mynginx:7.1 /mydocker
     ```
+    
+    docker image inspect hanxiao/mynginx:7.1
+    ```json
+    [
+        {
+            ...
+            "Config": {
+                ...
+                "ExposedPorts": {
+                    "80/tcp": {}
+                },
+                "Env": [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                ],
+                "Cmd": [
+                    "-h",
+                    "-V"
+                ],
+                "Volumes": null,
+                "WorkingDir": "",
+                "Entrypoint": [
+                    "/bin/sh",
+                    "-c",
+                    "/usr/sbin/nginx -v"
+                ],
+            }
+            ...
+        }
+    ]
+    ```
+
 * 测试镜像
     * 运行容器
     ```bash
@@ -232,6 +428,118 @@ exec form
     以上两种条命令的结果都是一样的
     ![](../image/image_test71.png)
     说明：ENTRYPOINT没有`CMD`或`docker run`传递的参数，最终只运行了`/usr/sbin/nginx -v`  
+
+    * 分析容器启动时的命令--ENTRYPOINT shell + CMD 默认参数
+        ```bash
+        ~]# docker run -d --name mynginx7_1_2 hanxiao/mynginx:7.1
+        ~]# docker logs mynginx7_1_2
+        nginx version: nginx/1.14.1
+        ```
+
+        docker inspect mynginx7_1_2
+        ```json
+        [
+            {
+                ...
+                // Path = .[0].Config.Entrypoint[0]
+                "Path": "/bin/sh",
+                // Args = .[0].Config.Entrypoint[1 : -1] + .[0].Config.Cmd
+                "Args": [
+                    "-c",
+                    "/usr/sbin/nginx -v",
+                    "-h",
+                    "-V"
+                ],
+                "Config": {
+                    ...
+                    "ExposedPorts": {
+                        "80/tcp": {}
+                    },
+                    "Env": [
+                        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                    ],
+                    "Cmd": [
+                        "-h",
+                        "-V"
+                    ],
+                    "Image": "hanxiao/mynginx:7.1",
+                    "Volumes": null,
+                    "WorkingDir": "",
+                    "Entrypoint": [
+                        "/bin/sh",
+                        "-c",
+                        "/usr/sbin/nginx -v"
+                    ],
+                }
+                ...
+            }
+        ]
+        ```
+        这里容器启动时执行的命令为 `/bin/sh -c '/usr/sbin/nginx -v' -h -V`，对于 sh 或 bash -c 只会对紧跟其右则的第一个字符串解析为参数，所以这里的 `-h -V` 就被忽略了，
+        多个参数的写法`/bin/sh -c '/usr/sbin/nginx 参数1 参数2 ...'`
+
+        ```
+        sh [options] [file]
+
+        bash [options] [file]
+        ```
+
+        ```bash
+        ~]# docker ps -a --no-trunc |egrep "mynginx7_1_2|ID"
+        CONTAINER ID       IMAGE                COMMAND                                   CREATED          STATUS                       PORTS     NAMES
+        cfb12646ca0ef...   hanxiao/mynginx:7.1  "/bin/sh -c '/usr/sbin/nginx -v' -h -V"   15 minutes ago   Exited (0) 15 minutes ago              mynginx7_1_2
+        ```
+        
+    * 分析容器启动时的命令--ENTRYPOINT shell + CMD 默认参数 + 传参
+        ```bash
+        ~]# docker run -d --name mynginx7_1_3 hanxiao/mynginx:7.1 -t
+        3aff423116ecc9baebc7b7b130281f354d04a1b908f81d1ccea6d6b49420484b
+        [root@bind-dns ~]# 
+        [root@bind-dns ~]# docker logs mynginx7_1_3
+        nginx version: nginx/1.14.1
+        ```
+
+        docker inspect mynginx7_1_3
+        ```json
+        [
+            {
+                ...
+                "Path": "/bin/sh",
+                "Args": [
+                    "-c",
+                    "/usr/sbin/nginx -v",
+                    "-t"
+                ],
+                "Config": {
+                    ...
+                    "ExposedPorts": {
+                        "80/tcp": {}
+                    },
+                    "Env": [
+                        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+                    ],
+                    "Cmd": [
+                        "-t"
+                    ],
+                    "Image": "hanxiao/mynginx:7.1",
+                    "Volumes": null,
+                    "WorkingDir": "",
+                    "Entrypoint": [
+                        "/bin/sh",
+                        "-c",
+                        "/usr/sbin/nginx -v"
+                    ],
+                    ...
+                },
+            }
+        ]
+        ```
+
+        ```bash
+        ~]# docker ps -a --no-trunc |egrep "mynginx7_1_3|ID"
+        CONTAINER ID       IMAGE                COMMAND                                   CREATED          STATUS                       PORTS     NAMES
+        3aff423116ecc...   hanxiao/mynginx:7.1  "/bin/sh -c '/usr/sbin/nginx -v' -t"      14 minutes ago   Exited (0) 14 minutes ago              mynginx7_1_3
+        ```
 
 ## 结论
 * CMD和ENTRYPOINT都可以定义容器启动时要执行主命令
