@@ -280,3 +280,11 @@ nodaemon=true
     ```text
     ENTRYPOINT ["/usr/sbin/init"]
     ```
+
+运行容器
+```bash
+docker run -itd --name rockylinux --privileged rockylinux:9.1 /usr/sbin/init
+
+// 或
+docker run -itd --name rockylinux --privileged rockylinux:9.1
+```
