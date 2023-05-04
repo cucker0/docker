@@ -135,7 +135,7 @@ Docker容器的哲学是一个Docker容器只运行一个进程。
         ```text
         check process httpd with pidfile /var/run/httpd/httpd.pid
             start program = "/sbin/service httpd start"
-            stop program = "/sbin/service httpd start"
+            stop program = "/sbin/service httpd stop"
             if failed port 80 type TCP then start
         ```
     
