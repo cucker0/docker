@@ -332,6 +332,10 @@ FROM之后的指令引用
     * 当<dest>目录不存在时，将会自动创建该目录
 * 示例
     ```dockerfile
+    # pkg/etc/named/ 下的所以文件或子目录下的文件，都复制到 /usr/local/bind/etc/named/ 下，不创建子目录。
+    ADD pkg/etc/named/* /usr/local/bind/etc/named/
+    # pkg/etc/named/ 下的所以文件或子目录下的文件，都复制到 /usr/local/bind/etc/named/ 下，保持原的子目录结构
+    ADD pkg/etc/named/ /usr/local/bind/etc/named/
     ADD test.txt /absoluteDir/
     ADD hom* /mydir/
     ADD hom?.txt /mydir/
