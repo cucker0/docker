@@ -81,6 +81,13 @@ CMD ["/bin/bash"]
     # Dockerifle从/opt/docker/context.tar.gz读取
     docker build - < /opt/docker/context.tar.gz
     ```
+        
+    * 示例1
+        ```bash
+        cd /mydocker/jdk_tomcat
+        docker build -f ./Dockerfile -t hanxiao2100/tomcat:10 .
+        ```
+    
 3. docker run
 
 ## Dockerfile构建过程分析
@@ -312,7 +319,7 @@ FROM之后的指令引用
     ```
     * <src>必须位于build的上下文目录内(build context)。不能超出此路径范围
     * 当<src>为目录时，则复制目录下的全部内容，包括文件系统元数据。
-    * 如果 <src> 资源为宿主机本地的tar压缩包文件（.gz, .gzip, .bzip2, .xz等），在镜像中将解压到<dest>目录，行为类似于 tar -x XX.tar.gz -C <dest> 
+    * 如果 <src> 资源为宿主机本地的tar压缩包文件（.gz, tar.gz, .xz, tar.xz, .gzip, .bzip2等），在镜像中将解压到<dest>目录，行为类似于 tar -x XX.tar.gz -C <dest> 
         即**将本地的tar文件提取到镜像中**
     * 如果 <src> 资源为URL资源时，在镜像中将不解压，直接下载
     * 当<src>为其它任何类型的文件，且<dest>以/结尾，则镜像中<src>将复制为<dest>/base(<src>)
