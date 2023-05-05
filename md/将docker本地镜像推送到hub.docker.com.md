@@ -16,10 +16,14 @@
     >docker build -f DockerfilePATH -t <hub-user>/<repo-name>[:<tag>] PATH
 
 * 对已经存在的镜像再加标签（取别名）
-    >docker tag <existing-image> <hub-user>/<repo-name>[:<tag>]
+    ```bash
+    docker tag <existing-image> <hub-user>/<repo-name>[:<tag>]
+    ```
     
 * 提交已经存在的容器
-    >docker commit <existing-container> <hub-user>/<repo-name>[:<tag>]
+    ```bash
+    docker commit <existing-container> <hub-user>/<repo-name>[:<tag>]
+    ```
     
 ## 3.在docker宿主机登录dockerhub
 ```bash
