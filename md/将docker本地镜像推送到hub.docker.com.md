@@ -13,7 +13,9 @@
 选择其中的一种方式生成镜像
 
 * 构建镜像
-    >docker build -f DockerfilePATH -t <hub-user>/<repo-name>[:<tag>] PATH
+    ```bash
+    docker build -f DockerfilePATH -t <hub-user>/<repo-name>[:<tag>] PATH
+    ```
 
 * 对已经存在的镜像再加标签（取别名）
     ```bash
@@ -37,7 +39,7 @@ https://docs.docker.com/engine/reference/commandline/login/#credentials-store
 
 Login Succeeded
 ```
-docker login省略登录地址，默认是 `hub.docker.com`
+docker login 省略登录地址，默认是 `hub.docker.com`
 
 ## 4.推送镜像
 ```bash
