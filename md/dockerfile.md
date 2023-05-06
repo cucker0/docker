@@ -409,7 +409,9 @@ FROM之后的指令引用
     COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
     
     # 复制多个文件
-    ENV glibc_dir=/usr/local/src/glibc-2.28
+    ARG glibc_dir=/usr/local/src/glibc-2.28
+    # 或
+    # ENV glibc_dir=/usr/local/src/glibc-2.28
     COPY --from=cucker/golang:1.17.1-glibc-static ${glibc_dir}/*.a \
         ${glibc_dir}/nptl/libpthread.a \
         ${glibc_dir}/dlfcn/libdl.a \
