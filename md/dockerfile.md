@@ -406,6 +406,7 @@ FROM之后的指令引用
 * 示例2
     ```dockerfile
     COPY --from=nginx:latest /etc/nginx/nginx.conf /nginx.conf
+    # 复制目录
     COPY --from=nginx:latest /usr/local/nginx /usr/local/nginx/
     
     # 复制多个文件
