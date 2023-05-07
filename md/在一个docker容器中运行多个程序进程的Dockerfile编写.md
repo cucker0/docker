@@ -71,6 +71,16 @@ Docker容器的哲学是一个Docker容器只运行一个进程。
     
     CMD ["/my/script", "--with", "--args"]
     ```
+    
+    * /my/script
+        ```bash
+        #!/usr/bin/dumb-init /bin/sh
+        # launch a process in the background
+        my-web-server &
+        my-web-server2 &
+        # launch another process in the foreground
+        my-other-server
+        ```
 
 ### tini
 * 是什么
