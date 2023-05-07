@@ -96,7 +96,7 @@ Docker容器的哲学是一个Docker容器只运行一个进程。
     简单的说，在CentOS中使用service xxx start 启动的程序，使用Monit可以直接管理，  
     这就解决了很多没有前台方式启动的程序不能用Supervisor来管理的问题。
 
-
+monit监控的服务无需前台运行，使用一般的服务文件启动即可。但是有一点限制就是，这个服务必须要有pid文件，如果某个服务没有pid文件，那么monit也就没办法操作了。
 
 * Dockerfile示例
 
