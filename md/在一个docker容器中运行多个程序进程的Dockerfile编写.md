@@ -60,8 +60,8 @@ Docker容器的哲学是一个Docker容器只运行一个进程。
 * Dockerfile示例
     ```text
     # Install dumb-init
-    RUN wget -O /usr/local/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64
-    RUN chmod +x /usr/local/bin/dumb-init
+    RUN wget -O /usr/bin/dumb-init https://github.com/Yelp/dumb-init/releases/download/v1.2.5/dumb-init_1.2.5_x86_64
+    RUN chmod +x /usr/bin/dumb-init
     
     # Runs "/usr/bin/dumb-init -- /my/script --with --args"
     ENTRYPOINT ["/usr/bin/dumb-init", "--"]
