@@ -98,6 +98,15 @@ Docker容器的哲学是一个Docker容器只运行一个进程。
 
 monit监控的服务无需前台运行，使用一般的服务文件启动即可。但是有一点限制就是，这个服务必须要有pid文件，如果某个服务没有pid文件，那么monit也就没办法操作了。
 
+* 优点
+    * 可以监控前台进程 和 后台进程。
+    * 除了监控进程还能监控文件、文件系统、系统资源、CPU等。
+    * 被监控的进程可以设置依赖、控制启动顺序。
+* 缺点
+    * 无法监控没有 pid 文件的进程，如shell脚本
+    * 对进程监控的状态感知有延时--采用轮询的方式进行监控
+
+
 * Dockerfile示例
 
     在容器中启动sshd和apache
@@ -112,7 +121,7 @@ monit监控的服务无需前台运行，使用一般的服务文件启动即可
     RUN mkdir /var/run/sshd  
     
     ## install ssh, apach, monit
-    RUN yum install -y monit openssh-server httpd
+    RUN yum install -y epel-release; yum install -y monit openssh-server httpd
     RUN chmod 700 /etc/monit.conf
     COPY monit-sshd.conf /etc/monit.d/monit-sshd.conf
     COPY monit-httpd.conf /etc/monit.d/monit-httpd.conf
