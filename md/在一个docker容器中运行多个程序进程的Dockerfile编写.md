@@ -150,6 +150,8 @@ Docker容器的哲学是一个Docker容器只运行一个进程。
         ```
         访问 `http://宿主机ip:9001`
 ### Supervisor
+官网 http://www.supervisord.org/
+
 Supervisor要以前台程序运行,如果是后台的方式docker会退出.
 
 Supervisor的配置文件
