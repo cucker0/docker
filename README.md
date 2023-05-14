@@ -90,6 +90,7 @@ docker的使用
     * [STOPSIGNAL](md/dockerfile.md#STOPSIGNAL)
     * [HEALTHCHECK](md/dockerfile.md#HEALTHCHECK)
     * [SHELL](md/dockerfile.md#SHELL)
+    * [Dockerfile中VOLUME的作用，以及与 `docker run -v`的区别和联系](md/Dockerfile中VOLUME的作用.md
     * [特别说明](md/dockerfile.md#特别说明)
         * [ADD or COPY](md/dockerfile.md#ADD-or-COPY)
         * [CMD与ENTRYPOINT的交互](md/dockerfile.md#CMD与ENTRYPOINT的交互)

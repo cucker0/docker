@@ -604,11 +604,11 @@ docker run -v 主机目录1路径:映射为容器目录1路径[:ro/rw] -v 主机
 * ro
     >只读
 
-如果 `主机目录路径` 为相对路径，则是相对于 `/var/lib/docker/volumes/` 目录。
+* 具名卷。如果 `主机目录路径` 为相对路径，则是相对于 `/var/lib/docker/volumes/` 目录。
 
-`映射为容器目录路径` 不支持相对路径
+* `映射为容器目录路径` 不支持相对路径
 
-如果 `-v`后只写一个路径 ，则表示`映射为容器目录路径`，省略了`主机目录路径`，会映射为 `/var/lib/docker/volumes/xxxxxx/_data`
+* 匿名卷。如果 `-v`后只写一个路径 ，则表示`映射为容器目录路径`，省略了`主机目录路径`，会映射为 `/var/lib/docker/volumes/xxxxxx/_data`
 
 
 ```bash
