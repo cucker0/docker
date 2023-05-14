@@ -151,3 +151,4 @@ docker的使用
 * [推送本地镜像到docker hub](md/将docker本地镜像推送到hub.docker.com.md)
 * [将本地镜像推送到阿里云](md/将本地镜像推送到阿里云.md)
 * [Dockerfile中ENTRYPOINT和CMD的区别](md/Dockerfile中ENTRYPOINT和CMD的区别.md)
+* [如何从Docker镜像中导出文件，再次解构Image](md/如何从Docker镜像中导出文件，再次解构Image.md)
