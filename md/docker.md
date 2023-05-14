@@ -615,7 +615,7 @@ docker run -v /doesnt/exist:/foo -w /foo -i -t ubuntu bash
 ```
 When the host directory of a bind-mounted volume doesn’t exist, Docker will automatically create this directory on the host for you.
 
-指定要绑定挂载的目录存在时，主机将自动创建该目录，/doesnt/exist 主机上的目录 挂载到容器中的/foo
+指定要绑定挂载的目录不存在时，主机将自动创建该目录，/doesnt/exist 主机上的目录 挂载到容器中的/foo
 
 
 ```bash
