@@ -369,7 +369,7 @@ FROM之后的指令引用
     COPY --chown=55:mygroup files* /somedir/
     COPY --chown=bin files* /somedir/
    
-    # 复制目录， 把 ./go 目录复制到镜像的 //usr/local/go/
+    # 复制目录， 把 ./go 目录复制到镜像的 /usr/local/go/
     COPY ./go /usr/local/go/
     相当于 COPY ./go/* /usr/local/go/
     ```
