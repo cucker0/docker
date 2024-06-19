@@ -352,10 +352,10 @@ FROM之后的指令引用
 
 * syntax
     ```dockerfile
-    COPY [--chown=<user>:<group>] <src>... <dest>
+    COPY [--chown=<user>:<group>] <src> ... <dest>
     
     # 路径中有空格
-    COPY [--chown=<user>:<group>] ["<src>",... "<dest>"]
+    COPY [--chown=<user>:<group>] ["<src>", ... "<dest>"]
     ```
     * \<src>必须位置build的上下文目录内。不能超出此路径范围
     * 当\<src>为目录时，则复制目录下的全部内容，包括文件系统元数据。
@@ -371,7 +371,8 @@ FROM之后的指令引用
    
     # 复制目录， 把 ./go 目录复制到镜像的 /usr/local/go/
     COPY ./go /usr/local/go/
-    相当于 COPY ./go/* /usr/local/go/
+    相当于
+    COPY ./go/* /usr/local/go/
     ```
 
 #### COPY --from=
