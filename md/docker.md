@@ -1121,7 +1121,16 @@ a376aa694b22        192.168.59.224:5000/nginx:1.12.1            "nginx -g 'daemo
 
 要从根本上解决问题，需要限制nginx容器的日志文件大小。
 
-这个可以通过配置日志的max-size来实现，下面是nginx容器的docker-compose配置文件：
+这个可以通过配置日志的max-size来实现，
+
+**docker 修改日志大小限制**
+```bash
+docker update --log-opt max-size=2g --log-opt max-file=3 mycontainer
+```
+max-size=2g  // 日志文件大小限制为 2GB
+max-file=3  // 最多保留5个日志文件
+
+**下面是nginx容器的docker-compose配置文件**
 ```yaml
 nginx:
   image: nginx:1.12.1
@@ -1133,6 +1142,7 @@ nginx:
 ```
 重启nginx容器之后，其日志文件的大小就被限制在5GB
 
+
 * 重启docker
 
     还有当我清理了镜像、容器以及数据卷之后，发现磁盘空间并没有减少。
@@ -1140,6 +1150,22 @@ nginx:
     根据Docker disk usage提到过的建议，我重启了Docker，发现磁盘使用率从83%降到了19%。
     
     根据高手指点，这应该是与内核3.13相关的BUG。
+
+**配置Docker Daemon，全局限制日志**
+
+编译 /etc/docker/daemon.json，添加下面的内容
+```bash
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "50m",
+    "max-file": "3"
+  }
+}
+```
+"max-size": "50m"  // 日志文件大小限制为 50MB
+
+重启 docker.service 服务
 
 ## 迁移image、container、volume
 ### image迁移
