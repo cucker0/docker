@@ -229,7 +229,7 @@ Dockerfile必须以一个 FORM 指令开始，即一般以 FORM 为第一行。D
     如果非要这么干，可以 `RUN echo export PATH=$PATH:/usr/local/siege/bin >> /root/.bash_profile`
     
 ### WORKDIR
-为Dockerfile中的`RUN`, `CMD`, `ENTRYPOINT`, `COPY`, `ADD`指令设置的"工作目录"
+为Dockerfile中的`RUN`, `CMD`, `ENTRYPOINT`, `COPY`, `ADD`指令设置"工作目录"
 
 可写多个，建议只写一个。
 
