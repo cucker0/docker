@@ -152,8 +152,7 @@ Dockerfile必须以一个 FORM 指令开始，即一般以 FORM 为第一行。D
 当然如有变量要传递，ARG可以在FROM之前。
 "FROM之前定义的ARG变量，只能FROM引用"，FROM之后的指令不要引用
 
-因为FROM指令之前还没有进入构建阶段。如果FROM 之后的指令引用了ROM之前定义的ARG变量，那么其变量没有值
-FROM之后的指令引用
+因为FROM指令之前还没有进入构建阶段。如果FROM 之后的指令引用了FROM之前定义的ARG变量，那么其变量没有值。
 ```
 * syntax
     ```dockerfile
