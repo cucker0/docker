@@ -63,7 +63,7 @@ docker run -v /宿主机目录或文件绝对路径:/容器目录或文件路径
     docker build -f /mydocker/Dockerfile -t hanxiao/mycentos:1.1 /mydocker
     ```
     * 参考`docker build [OPTIONS] PATH | URL | -`
-    * PATH为执行上述命令时，pwd显示为/mydocker，可以用`.`来表示
+    * PATH为执行上述命令时，pwd显示为/mydocker，可以用`.`来表示主机的当前目录
     * -f  指定Dockerfile文件，缺省为'PATH/Dockerfile'
     * -t  指定镜像名标识，格式 'name:tag'
     
