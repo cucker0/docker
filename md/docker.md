@@ -477,7 +477,7 @@ docker的使用
     docker rm CONTAINER_ID
 
 * 删除所有的容器
-    >docker rm -fv `docker ps -a --format "{{.ID}}"`
+    >docker rm -fv $(docker ps -a --format "{{.ID}}")
 
 * 删除所有已经退出的容器
     >docker rm -v $(docker ps -aq -f status=exited)
