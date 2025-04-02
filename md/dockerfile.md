@@ -778,7 +778,7 @@ CMD和ENTRYPOINT都能定义容器启动时要执行的命令。
 **CMD与ENTRYPOINT组合使用的规则**
 1. Dockerfile中至少要指定一个`CMD`或`ENTRYPOINT`命令
 2. 把容器当可执行文件用，使用`ENTRYPOINT`
-3. `CMD`用于给`ENTRYPOINT`命令定义默认参数，当docker run有传递参数时，该默认参数会报覆盖。  
+3. `CMD`用于给`ENTRYPOINT`命令定义默认参数，当docker run有传递参数时，该默认参数会被覆盖。  
     且`ENTRYPOINT`只能用 exec form写法
 4. `CMD`用于在容器中执行特殊的命令
 5. 当docker run容器指定了额外的参数时，`CMD`定义的命令将会被覆盖。  
