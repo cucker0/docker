@@ -518,7 +518,7 @@ docker的使用
 
     docker run -d -p 127.0.0.1:80:5000/udp training/webapp python app.py
 
-    // 还可以指定 /sctp 协议s
+    // 还可以指定 /sctp 协议，‌SCTP：Stream Control Transmission Protocol--流控制传输协议
     ```
 * docker容器的配置文件目录
     ```text
