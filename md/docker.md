@@ -838,6 +838,8 @@ cat /etc/sysconfig/iptables
 
 #### 修改Docker容器启动配置参数
 有时候，我们创建容器时忘了添加参数 --restart=always ，当 Docker 重启时，容器未能自动启动
+Restart policies 可选值：no、on-failure[:max-retries]、always、unless-stopped
+
 
 * 方法1: Docker命令修改
     ```bash
