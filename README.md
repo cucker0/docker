@@ -107,13 +107,13 @@ docker的使用
 <details>
 <summary>docker compose</summary>
 
-* [是什么](#是什么)
-* [使用Compose的3个基本步骤](#使用Compose的3个基本步骤)
-* [安装Compose](#安装Compose)
-* [删除Compose](#删除Compose)
-* [docker-compose CLI命令](#docker-compose-CLI命令)
-* [compose file的编写](#compose-file的编写)
-* [compose演示示例](#compose演示示例)
+* [是什么](md/docker_compose.md#是什么)
+* [使用Compose的3个基本步骤](md/docker_compose.md#使用Compose的3个基本步骤)
+* [安装Compose](md/docker_compose.md#安装Compose)
+* [删除Compose](md/docker_compose.md#删除Compose)
+* [docker-compose CLI命令](md/docker_compose.md#docker-compose-CLI命令)
+* [compose file的编写](md/docker_compose.md#compose-file的编写)
+* [compose演示示例](md/docker_compose.md#compose演示示例)
 </details>
 
 <details>
